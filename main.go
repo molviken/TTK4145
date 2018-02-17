@@ -1,13 +1,14 @@
 package main
 
 import (
-	"flag"
+	//"flag"
 	"fmt"
-	"os"
+	hw "github.com/molviken/TTK4145/hardware"
+	/*"os"
 	"os/signal"
 	"strconv"
 	"time"
-
+*/
 )
 
 func main(){
