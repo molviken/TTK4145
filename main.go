@@ -3,7 +3,7 @@ package main
 import (
 	//"flag"
 	"fmt"
-	hw "github.com/molviken/TTK4145/hardware/random.go"
+	. "github.com/molviken/TTK4145/Network/network"
 	/*"os"
 	"os/signal"
 	"strconv"
@@ -12,5 +12,6 @@ import (
 )
 
 func main(){
+
 	fmt.Println("Testing testing")
 }
