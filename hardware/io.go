@@ -1,6 +1,5 @@
 package Hardware
 
-
 import "C"
 
 func io_init() int {
