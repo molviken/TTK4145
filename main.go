@@ -3,7 +3,8 @@ package main
 import (
 	//"flag"
 	"fmt"
-	. "github.com/molviken/TTK4145/Network/network"
+	hw "./hardware"
+	channels "./hardware"
 	/*"os"
 	"os/signal"
 	"strconv"
@@ -12,6 +13,6 @@ import (
 )
 
 func main(){
-
+	hw.SetButtonLamp(channels.BUTTON_DOWN2, 2, 1)
 	fmt.Println("Testing testing")
 }
