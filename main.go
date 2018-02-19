@@ -3,8 +3,12 @@ package main
 import (
 	//"flag"
 	"fmt"
-	hw "./hardware"
-	channels "./hardware"
+	//bcast "./Network/network/bcast"
+	//conn "./Network/network/conn"
+	"./network/network"
+	//io "./io"
+	//hw "./hardware"
+	//channels "./hardware"
 	/*"os"
 	"os/signal"
 	"strconv"
@@ -13,6 +17,7 @@ import (
 )
 
 func main(){
-	hw.SetButtonLamp(channels.BUTTON_DOWN2, 2, 1)
+	//hw.SetButtonLamp(channels.BUTTON_DOWN2, 2, 1)
+	//io.SetDoorOpenLamp(true)
 	fmt.Println("Testing testing")
 }
