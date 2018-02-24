@@ -9,11 +9,6 @@ import (
 	//localip "./network/localip"
 	elevio "./elevio"
 	conn "./network/conn"
-	/*"os"
-	"os/signal"
-	"strconv"
-	"time"
-*/
 )
 const (
 	C_TYPE = "udp"
@@ -24,7 +19,10 @@ const (
 )
 var simHost string = "15657"
 
-
+type elevator struct{
+	curr_floor int
+	curr_dir elevio.MotorDirection
+}
 func main(){
 	elevio.Init("localhost:15657", 4)
 	fmt.Println("Testing testing")
@@ -39,17 +37,27 @@ func main(){
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 	
-
-
+	list := []elevio.ButtonEvent{}
+	var global elevio.ButtonEvent
+	var elevator1 elevator
+	var index int
 	for{
-		
 		select{
 		case a:= <- drv_buttons:
-			elevFunc.GetOrder(a)	
+			list[index] = a
+			global = a
+			index  += 1
 		case a := <- drv_floors:
-			fmt.Println("Floor sensor:%v\n", a)
+			elevator1.curr_floor = a
+			//fmt.Println("Floor sensor:%d", a)
+		case a := <- drv_stop:
+			elevFunc.Fsm_Stop(a)
 		}
-		
+		if (index != 0){
+			elevFunc.CalculateCost(list[index1], elevator1.curr_floor, list[index-1])
+		}
+
+		//elevFunc.GoToOrder(elevator1.curr_floor, list[index].OrderFloor)
 	}	
 
 }

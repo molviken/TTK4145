@@ -1,0 +1,11 @@
+
+current floor > order floor and going down and HallUp 	= (N+1) - d
+current floor < order floor and going up and HallDown 	= (N+1) - d
+
+
+current floor < order floor and going up and HallUp 	= (N+2) - d
+current floor > order floor and going down and HallDown = (N+2) - d
+
+current floor > order floor but going up    		= 1
+current floor < order floor but going down  		= 1
+
