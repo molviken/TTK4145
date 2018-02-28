@@ -3,6 +3,7 @@ package main
 import (
 	//"flag"
 	//"time"
+	"container/list"
 	"fmt"
 	elevFunc "./elevFunc"
 	//bcast "./Network/network/bcast"
@@ -37,27 +38,34 @@ func main(){
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 	
-	list := []elevio.ButtonEvent{}
-	var global elevio.ButtonEvent
+	l := list.New()//var global elevio.ButtonEvent
 	var elevator1 elevator
-	var index int
+	//var indexxx int = 0
 	for{
 		select{
 		case a:= <- drv_buttons:
-			list[index] = a
-			global = a
-			index  += 1
+			e := new(elevio.ButtonEvent)
+			e = &a
+
+			l.PushFront(e)
+			//fmt.Println("Next: ", l.Front().Next())
+			fmt.Println("list.Floor: ", l.Front().Value.(*elevio.ButtonEvent).Floor)
+			fmt.Println("list.Button: ", l.Front().Value.(*elevio.ButtonEvent).Button)
 		case a := <- drv_floors:
 			elevator1.curr_floor = a
-			//fmt.Println("Floor sensor:%d", a)
+			if (l.Front() != nil){
+				elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
+			}
+			
+			fmt.Println("Dir:", elevator1.curr_dir)
+			fmt.Println("curr floor: ", elevator1.curr_floor)
 		case a := <- drv_stop:
 			elevFunc.Fsm_Stop(a)
 		}
-		if (index != 0){
-			elevFunc.CalculateCost(list[index1], elevator1.curr_floor, list[index-1])
+		if (l.Front().Next() != nil && l.Front() != nil){
+			elevFunc.CalculateCost(l.Front().Value.(elevio.ButtonEvent), elevator1.curr_floor, elevator1.curr_dir)
 		}
-
-		//elevFunc.GoToOrder(elevator1.curr_floor, list[index].OrderFloor)
+		list = elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l.Front().Value.(elevio.ButtonEvent))
 	}	
 
 }
