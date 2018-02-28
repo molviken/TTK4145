@@ -1,6 +1,7 @@
 package elevFunc
 
 import (
+	"container/list"
 	elevio ".././elevio"
 	"fmt"
 )
@@ -8,18 +9,33 @@ const(
 	N = 4-1 // Number of floors -1
 )
 
+func ElevInit(a int, init bool){
+	if(init == false && a == 0){
+		elevio.SetMotorDirection(elevio.MD_Stop)
+		init = true
+	}
+}
+
 func GetDirection(sensor int, order int)elevio.MotorDirection{
 	dir := sensor - order
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
 
-func GoToOrder(sensor int, order int, a *elevio.ButtonEvent){
+func GoToOrder(sensor int, order int, l *list.Element){
+
 	if (order < sensor){
 		elevio.SetMotorDirection(elevio.MD_Down)
 	}else if (order > sensor){
 		elevio.SetMotorDirection(elevio.MD_Up)
 	}else{
 		elevio.SetMotorDirection(0)
+		l = l.Next()
+		if(l != nil){
+			fmt.Println(l.Value)
+		}else{
+			fmt.Println("Listen er tomm")
+		}
+		
 	}
 	//fmt.Println("Ordered floor: ",order)
 
