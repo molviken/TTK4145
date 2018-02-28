@@ -13,7 +13,7 @@ func GetDirection(sensor int, order int)elevio.MotorDirection{
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
 
-func GoToOrder(sensor int, order int, a elevio.ButtonEvent)elevio.ButtonEvent{
+func GoToOrder(sensor int, order int, a *elevio.ButtonEvent){
 	if (order < sensor){
 		elevio.SetMotorDirection(elevio.MD_Down)
 	}else if (order > sensor){
@@ -21,7 +21,6 @@ func GoToOrder(sensor int, order int, a elevio.ButtonEvent)elevio.ButtonEvent{
 	}else{
 		elevio.SetMotorDirection(0)
 	}
-	return a
 	//fmt.Println("Ordered floor: ",order)
 
 }

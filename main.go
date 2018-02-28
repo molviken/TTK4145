@@ -18,7 +18,6 @@ const (
 	H_IP = "192.168.43.131" // Localip pålogget hotspot
 	PORT_ELEV = ""
 )
-var simHost string = "15657"
 
 type elevator struct{
 	curr_floor int
@@ -57,15 +56,20 @@ func main(){
 				elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
 			}
 			
-			fmt.Println("Dir:", elevator1.curr_dir)
+			//fmt.Println("Dir:", elevator1.curr_dir)
 			fmt.Println("curr floor: ", elevator1.curr_floor)
 		case a := <- drv_stop:
 			elevFunc.Fsm_Stop(a)
 		}
-		if (l.Front().Next() != nil && l.Front() != nil){
+		if ( l.Front() != nil && l.Front().Next() != nil){
 			elevFunc.CalculateCost(l.Front().Value.(elevio.ButtonEvent), elevator1.curr_floor, elevator1.curr_dir)
 		}
-		list = elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l.Front().Value.(elevio.ButtonEvent))
+
+
+
+		if(l.Front() != nil){
+			elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l.Front().Value.(*elevio.ButtonEvent))
+		}
 	}	
 
 }
