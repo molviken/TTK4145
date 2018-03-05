@@ -32,7 +32,10 @@ Bruke en struct til channels? Sett mange som gjør det siden vi har så mange, l
 
 type Channels struct {
 	newOrderChan chan bool
-
+	drv_buttons := make(chan elevio.ButtonEvent)
+	drv_floors  := make(chan int)
+	drv_obstr   := make(chan bool)
+	drv_stop    := make(chan bool) 
 //Alle channels definert her
 }
 
