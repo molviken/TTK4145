@@ -3,9 +3,9 @@ package main
 import (
 	"container/list"
 	"fmt"
+	queue "./queue"
+	task "./eventHandler"
 	elevFunc "./elevFunc"
-	//bcast "./Network/network/bcast"
-	//localip "./network/localip"
 	elevio "./elevio"
 	conn "./network/conn"
 )
@@ -17,55 +17,31 @@ const (
 	PORT_ELEV = ""
 )
 
-type elevator struct{
-	curr_floor int
-	curr_dir elevio.MotorDirection
-}
-func main(){
-	elevio.Init("localhost:15657", 4)
-	fmt.Println("Testing testing")
-	conn.DialBroadcastUDP(15657)
 
+func main(){
+	task.StartBroadcast()
+	queue.InitQueue()
+	var localL = list.New()
+	var remoteL = list.New()
+	var channel task.Channels
 	var init bool = false
 	elevio.SetMotorDirection(elevio.MD_Down)
 
-	drv_buttons := make(chan elevio.ButtonEvent)
-	drv_floors  := make(chan int)
-	drv_obstr   := make(chan bool)
-	drv_stop    := make(chan bool) 
-	go elevio.PollButtons(drv_buttons)
-	go elevio.PollFloorSensor(drv_floors)
-	go elevio.PollObstructionSwitch(drv_obstr)
-	go elevio.PollStopButton(drv_stop)
+	channel.buttons := make(chan elevio.ButtonEvent)
+	channel.floorSensor := make(chan int)
+	channel.obstr := make(chan bool)
+	channel.stop := make(chan bool)
+	channel.transmitt := make(chan interface{})
+	channel.receive := make(chan interface{})
+	go elevio.PollButtons(channel.buttons)
+	go elevio.PollFloorSensor(channel.floorSensor)
+	go elevio.PollObstructionSwitch(channel.obstr)
+	go elevio.PollStopButton(channels.stop)
 
-	l := list.New()//var global elevio.ButtonEvent
 	var elevator1 elevator
+
 	for{
-		select{
-		case a:= <- drv_buttons:
-			e := new(elevio.ButtonEvent)
-			e = &a
-			l.PushBack(e)
-		case a := <- drv_floors:
-			elevFunc.ElevInit(a, init)
-			elevator1.curr_floor = a
-			if (l.Front() != nil){
-				elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
-			}
-			elevio.SetFloorIndicator(a)
-		case a := <- drv_stop:
-			elevFunc.Fsm_Stop(a)
-		}
-		if ( l.Front() != nil && l.Front().Next() != nil){
-			//elevFunc.CalculateCost(l.Front().Value.(elevio.ButtonEvent), elevator1.curr_floor, elevator1.curr_dir)
-		}
-
-
-
-		if(l.Front() != nil){
-			elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l.Front())
-			fmt.Println(l.Front().Value)
-		}
+		task.HandleEvents(channel)
 	}	
 
 }

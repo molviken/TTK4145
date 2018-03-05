@@ -1,8 +1,12 @@
 package queue
 
 import (
+	"container/list"
+	".././elevio"
 )
-
+const (
+	N = 4-1 // num floors - 1
+)
 
 /* Define queues, we need a local queue and a remote queue. The remote queue should contain all
 "outside" orders (of all elevators) in case of one of them dying. The local queue should only containt
@@ -13,26 +17,32 @@ The local queue needs to be saved on the disk due to the elevator dying. */
 /*Run init to spawn the backup from disk in case of elevator coming back from dying
 Also start the go routine for saving all local orders to disk
 Initialize the linked list*/
-func initQueue(){
-
+func InitQueue(){
+	//localL := list.New()
+	//remoteL := list.New()
 }
 
 /*Probably need more functions here, maybe put shouldStop in here?*/
 
-func updateLocalQueue(order Order){
-
+func UpdateLocalQueue(l *list.List, order elevio.ButtonEvent){
+	e := new(elevio.ButtonEvent)
+	e = &order
+	l.PushBack(e)
 }
 
 
-func updateRemoteQueue(order Order){
+func UpdateRemoteQueue(l *list.List, order elevio.ButtonEvent){
+	e := new(elevio.ButtonEvent)
+	e = &order
+	l.PushBack(e)
 }
 
-func removeLocalOrder(order Order){
-
+func removeLocalOrder(ll *list.List, order *list.Element){
+	ll.Remove(order)
 }
 
-func removeRemoteOrder(order Order){
-
+func removeRemoteOrder(rl *list.List, order *list.Element){
+	rl.Remove(order)
 }
 /*This function finds the cost of adding an order to the queue, not sure what arguments
 it needs to figure it out*/
@@ -53,4 +63,22 @@ func Cost(button *elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) in
 	}
 	//fmt.Println("FS: ", FS)
 	return FS
+}
+
+func DuplicateOrderLocal(ll *list.List, order elevio.ButtonEvent)bool{
+	for k := ll.Front(); k != nil; k = k.Next(){
+		if (k.Value.(elevio.ButtonEvent) == order){
+			return true
+		}
+	}
+	return false
+}
+
+func DuplicateOrderRemote(rl *list.List, order elevio.ButtonEvent)bool{
+	for k := rl.Front(); k != nil; k = k.Next(){
+		if (k.Value.(elevio.ButtonEvent) == order){
+			return true
+		}
+	}
+	return false
 }

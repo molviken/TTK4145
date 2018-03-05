@@ -21,7 +21,7 @@ func GetDirection(sensor int, order int)elevio.MotorDirection{
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
 
-func GoToOrder(sensor int, order int, l *list.Element){
+func ExecuteOrder(sensor int, order int, l *list.Element){
 
 	if (order < sensor){
 		elevio.SetMotorDirection(elevio.MD_Down)
@@ -34,12 +34,10 @@ func GoToOrder(sensor int, order int, l *list.Element){
 			fmt.Println(l.Value)
 		}else{
 			fmt.Println("Listen er tomm")
-		}
-		
+		}	
 	}
-	//fmt.Println("Ordered floor: ",order)
-
 }
+
 // ALGORITHM:	FS = Suitability score		N = Floors -1		d = distance
 // (1) Towards the call, same direction
 //		FS = (N+2) - d
@@ -62,12 +60,6 @@ func CalculateCost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirec
 	}
 	fmt.Println("FS: ", FS)
 	//return FS
-}
-
-func Fsm_Stop(stop_button bool){
-	if (stop_button){
-		elevio.SetMotorDirection(0)
-	}
 }
 // ((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))   
 // ((d<0) && (c_dir>0) && (button.Button == 0)) || ((d>0) && (c_dir>0) && (button.Button == 1))      
