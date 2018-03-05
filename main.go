@@ -16,7 +16,9 @@ const (
 	C_HOST = "localhost"
 	C_IP = "129.241.187.159"  // Localip pålogget Eduroam
 	H_IP = "192.168.43.131" // Localip pålogget hotspot
+	IP_PLASS_3 = "129.241.187.150"
 	PORT_ELEV = ""
+	IP_WANGEN = "192.168.43.56"
 )
 
 type elevator struct{
@@ -39,41 +41,30 @@ func main(){
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
-
-	l := list.New()//var global elevio.ButtonEvent
+	l := list.New()
 	var elevator1 elevator
-	//var indexxx int = 0
 	for{
 		select{
 		case a:= <- drv_buttons:
 			e := new(elevio.ButtonEvent)
 			e = &a
-
 			l.PushBack(e)
-			//fmt.Println("Next: ", l.Front().Next())
-			//fmt.Println("list.Floor: ", l.Front().Value.(*elevio.ButtonEvent).Floor)
-			//fmt.Println("list.Button: ", l.Front().Value.(*elevio.ButtonEvent).Button)
+			elevFunc.CalculateCost(e, elevator1.curr_floor, elevator1.curr_dir)
+			if(l.Front() != nil){
+				elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
+				elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l)
+			}
 		case a := <- drv_floors:
 			elevFunc.ElevInit(a, init)
 			elevator1.curr_floor = a
-			if (l.Front() != nil){
-				elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
-			}
 			elevio.SetFloorIndicator(a)
-			//fmt.Println("Dir:", elevator1.curr_dir)
-			//fmt.Println("curr floor: ", elevator1.curr_floor)
+			elevFunc.ScanFloor(a, elevator1.curr_dir, l)
+			if(l.Front() != nil){
+				elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
+				elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l)
+			}
 		case a := <- drv_stop:
 			elevFunc.Fsm_Stop(a)
-		}
-		if ( l.Front() != nil && l.Front().Next() != nil){
-			//elevFunc.CalculateCost(l.Front().Value.(elevio.ButtonEvent), elevator1.curr_floor, elevator1.curr_dir)
-		}
-
-
-
-		if(l.Front() != nil){
-			elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l.Front())
-			fmt.Println(l.Front().Value)
 		}
 	}	
 
