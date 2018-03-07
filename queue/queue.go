@@ -3,6 +3,7 @@ package queue
 import (
 	"container/list"
 	".././elevio"
+	//"fmt"
 )
 const (
 	N = 4-1 // num floors - 1
@@ -35,13 +36,14 @@ func UpdateRemoteQueue(l *list.List, order elevio.ButtonEvent){
 	e := new(elevio.ButtonEvent)
 	e = &order
 	l.PushBack(e)
+
 }
 
-func removeLocalOrder(ll *list.List, order *list.Element){
+func RemoveLocalOrder(ll *list.List, order *list.Element){
 	ll.Remove(order)
 }
 
-func removeRemoteOrder(rl *list.List, order *list.Element){
+func RemoveRemoteOrder(rl *list.List, order *list.Element){
 	rl.Remove(order)
 }
 /*This function finds the cost of adding an order to the queue, not sure what arguments
@@ -66,18 +68,22 @@ func Cost(button *elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) in
 }
 
 func DuplicateOrderLocal(ll *list.List, order elevio.ButtonEvent)bool{
-	for k := ll.Front(); k != nil; k = k.Next(){
-		if (k.Value.(elevio.ButtonEvent) == order){
-			return true
+	if (ll.Front() != nil){
+		for k := ll.Front(); k != nil; k = k.Next(){
+			if (k.Value.(elevio.ButtonEvent) == order){
+				return true
+			}
 		}
 	}
 	return false
 }
 
 func DuplicateOrderRemote(rl *list.List, order elevio.ButtonEvent)bool{
-	for k := rl.Front(); k != nil; k = k.Next(){
-		if (k.Value.(elevio.ButtonEvent) == order){
-			return true
+	if (rl.Front() != nil){
+		for k := rl.Front(); k != nil; k = k.Next(){
+			if (k.Value.(elevio.ButtonEvent) == order){
+				return true
+			}
 		}
 	}
 	return false

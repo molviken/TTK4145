@@ -22,9 +22,8 @@ const (
 	receive chan interface{}
 }
 func main(){
-	task.StartBroadcast()
-	queue.InitQueue()
-
+	var localL = list.New()
+	var remoteL = list.New()
 
 	button := make(chan elevio.ButtonEvent)
 	floorSensor := make(chan int)
@@ -32,15 +31,17 @@ func main(){
 	stop := make(chan bool)
 	//transmitt := make(chan interface{})
 	//receive := make(chan interface{})
+	
+	task.StartBroadcast()
+	queue.InitQueue()
+	elevio.SetMotorDirection(elevio.MD_Down)
 	go elevio.PollButtons(button)
 	go elevio.PollFloorSensor(floorSensor)
 	go elevio.PollObstructionSwitch(obstr)
 	go elevio.PollStopButton(stop)
 
-	var localL = list.New()
-	var remoteL = list.New()
-	var init bool = false
-	elevio.SetMotorDirection(elevio.MD_Down)
+
+	
 
 	for{
 		task.HandleEvents(button, floorSensor, obstr, stop, localL, remoteL)

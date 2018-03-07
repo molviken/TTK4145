@@ -3,13 +3,18 @@ package elevFunc
 import (
 	"container/list"
 	elevio ".././elevio"
+	//queue ".././queue"
 	"fmt"
 	"time"
 )
 const(
 	N = 4-1 // Number of floors -1
 )
-
+func PrintList(l *list.Element){
+	for k := l; k != nil; k = k.Next(){
+		fmt.Println("List: ",k.Value)
+	}
+}
 func ElevInit(a int, init bool){
 	if(init == false && a == 0){
 		elevio.SetMotorDirection(elevio.MD_Stop)
@@ -28,22 +33,18 @@ func GetDirection(sensor int, order int)elevio.MotorDirection{
 }
 
 func ExecuteOrder(sensor int, order int, l *list.Element){
-
 	if (order < sensor){
 		elevio.SetMotorDirection(elevio.MD_Down)
 	}else if (order > sensor){
 		elevio.SetMotorDirection(elevio.MD_Up)
 	}else{
 		elevio.SetMotorDirection(0)
-		l = l.Next()
-		if(l != nil){
-			fmt.Println(l.Value)
-		}else{
-			fmt.Println("Listen er tomm")
-		}	
+		OpenDoor()
 	}
 }
-
+func RemoveFirstOrder(front *list.Element){
+	front = front.Next()
+}
 // ALGORITHM:	FS = Suitability score		N = Floors -1		d = distance
 // (1) Towards the call, same direction
 //		FS = (N+2) - d
