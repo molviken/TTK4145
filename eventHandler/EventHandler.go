@@ -7,16 +7,11 @@ import(
 	queue ".././queue"
 	elevio ".././elevio"
 	"container/list"
-)
-type Channels struct {
-	newOrderChan chan bool
-	buttons chan elevio.ButtonEvent
-	floorSensor chan int
-	obstr chan bool
-	stop chan bool
-	transmitt chan interface{}
-	receive chan interface{}
-}
+)	
+
+
+
+
 
 /*
 States:
@@ -41,10 +36,7 @@ type elevator struct{
 var elevator1 elevator
 
 /* Initialize the go routines needed to handle events, and initialize the elevetor*/
-func eventHandlerInit(channels Channels){
-	var elevator elevator1
 
-}
 
 
 /*
@@ -55,28 +47,28 @@ EventShouldStop: At each floor we check if there is an order to take if it is co
 */
 
 //Denne funskjonen skal egentlig ikke gjøre så mye utenom select mellom alle eventsene
-func HandleEvents(channel Channels, localL *list.List, remoteL *list.List){
+func HandleEvents(button chan<- elevio.ButtonEvent, floorSensor chan<- int, obstr chan<- bool, stop chan<- bool, localL *list.List, remoteL *list.List){
 	select{
-		case button_pressed:= <- channel.button:
-			if (button_pressed.Button == elevio.MD_Cab && !queue.DuplicateOrderLocal()){
-				EventNewLocalOrder(queue.LocalL)
-			}else if (button_pressed.Button != elevio.MD_Cab && !queue.DuplicateOrderRemote()){
-				EventNewRemoteOrder()
+		case button_pressed:= <- button:
+			if (button_pressed.Button == elevio.BT_Cab && !queue.DuplicateOrderLocal(localL, button_pressed)){
+				EventNewLocalOrder(localL, button_pressed)
+			}else if (button_pressed.Button != elevio.BT_Cab && !queue.DuplicateOrderRemote(remoteL, button_pressed)){
+				EventNewRemoteOrder(remoteL, button_pressed)
 			}
 
 
-		case floor := <- channel.floorSensor:
+		case floor := <- floorSensor:
 			elevator1.curr_floor = floor
 			elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, localL.Front().Value.(*elevio.ButtonEvent).Floor)
-			if(l.Front() != nil){
-				shouldStop(floor, elevator1.curr_dir, queue.LocalL)
+			if(localL.Front() != nil){
+				shouldStop(floor, elevator1.curr_dir, localL)
 			}
 
 
-		case obstr := <- channel.obstr:
+		//case obstr := <- channel.obstr:
 
 
-		case stop := <- channel.stop:
+		//case stop := <- channel.stop:
 			
 	}
 }
@@ -93,17 +85,17 @@ The events that can occur
 func EventFloorReached(channels Channels){
 }
 
-func EventNewLocalOrder(button_pressed elevio.ButtonEvent){
-	queue.UpdateLocalQueue(button_pressed)
-	if(l.Front() != nil){
-		elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor)
-		elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l)
+func EventNewLocalOrder(localL *list.List, button_pressed elevio.ButtonEvent){
+	queue.UpdateLocalQueue(localL,button_pressed)
+	if(localL.Front() != nil){
+		elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, localL.Front().Value.(*elevio.ButtonEvent).Floor)
+		elevFunc.ExecuteOrder(elevator1.curr_floor, localL.Front().Value.(*elevio.ButtonEvent).Floor, localL.Front())
 	}
 }
-func EventNewRemoteOrder(button_pressed elevio.ButtonEvent){
-	queue.UpdateRemoteQueue(button_pressed)
-	if(l.Front() != nil){
-		elevFunc.GoToOrder(elevator1.curr_floor, l.Front().Value.(*elevio.ButtonEvent).Floor, l)
+func EventNewRemoteOrder(remoteL *list.List, button_pressed elevio.ButtonEvent){
+	queue.UpdateRemoteQueue(remoteL, button_pressed)
+	if(remoteL.Front() != nil){
+		elevFunc.ExecuteOrder(elevator1.curr_floor, remoteL.Front().Value.(*elevio.ButtonEvent).Floor, remoteL.Front())
 	}
 }
 
@@ -117,12 +109,12 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, l *list.List){
 			switch{
 			case dir == elevio.MD_Up:
 				if (k.Value.(*elevio.ButtonEvent).Button != 1){
-					OpenDoor()
+					elevFunc.OpenDoor()
 					l.Remove(k)
 				}
 			case dir == elevio.MD_Down:
 				if (k.Value.(*elevio.ButtonEvent).Button != 0){
-					OpenDoor()
+					elevFunc.OpenDoor()
 					l.Remove(k)
 				}
 			}

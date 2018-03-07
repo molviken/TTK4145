@@ -2,12 +2,9 @@ package main
 
 import (
 	"container/list"
-	"fmt"
+	elevio "./elevio"
 	queue "./queue"
 	task "./eventHandler"
-	elevFunc "./elevFunc"
-	elevio "./elevio"
-	conn "./network/conn"
 )
 const (
 	C_TYPE = "udp"
@@ -16,32 +13,37 @@ const (
 	H_IP = "192.168.43.131" // Localip pålogget hotspot
 	PORT_ELEV = ""
 )
-
-
+	type Channels struct {
+	button chan elevio.ButtonEvent
+	floorSensor chan int
+	obstr chan bool
+	stop chan bool
+	transmitt chan interface{}
+	receive chan interface{}
+}
 func main(){
 	task.StartBroadcast()
 	queue.InitQueue()
+
+
+	button := make(chan elevio.ButtonEvent)
+	floorSensor := make(chan int)
+	obstr := make(chan bool)
+	stop := make(chan bool)
+	//transmitt := make(chan interface{})
+	//receive := make(chan interface{})
+	go elevio.PollButtons(button)
+	go elevio.PollFloorSensor(floorSensor)
+	go elevio.PollObstructionSwitch(obstr)
+	go elevio.PollStopButton(stop)
+
 	var localL = list.New()
 	var remoteL = list.New()
-	var channel task.Channels
 	var init bool = false
 	elevio.SetMotorDirection(elevio.MD_Down)
 
-	channel.buttons := make(chan elevio.ButtonEvent)
-	channel.floorSensor := make(chan int)
-	channel.obstr := make(chan bool)
-	channel.stop := make(chan bool)
-	channel.transmitt := make(chan interface{})
-	channel.receive := make(chan interface{})
-	go elevio.PollButtons(channel.buttons)
-	go elevio.PollFloorSensor(channel.floorSensor)
-	go elevio.PollObstructionSwitch(channel.obstr)
-	go elevio.PollStopButton(channels.stop)
-
-	var elevator1 elevator
-
 	for{
-		task.HandleEvents(channel)
+		task.HandleEvents(button, floorSensor, obstr, stop, localL, remoteL)
 	}	
 
 }

@@ -4,6 +4,7 @@ import (
 	"container/list"
 	elevio ".././elevio"
 	"fmt"
+	"time"
 )
 const(
 	N = 4-1 // Number of floors -1
@@ -15,7 +16,12 @@ func ElevInit(a int, init bool){
 		init = true
 	}
 }
-
+func OpenDoor(){
+	elevio.SetMotorDirection(0)
+	elevio.SetDoorOpenLamp(true)
+	time.Sleep(1*time.Second)
+	elevio.SetDoorOpenLamp(false)
+}
 func GetDirection(sensor int, order int)elevio.MotorDirection{
 	dir := sensor - order
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
