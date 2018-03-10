@@ -11,8 +11,9 @@ const(
 	N = 4-1 // Number of floors -1
 )
 func PrintList(l *list.Element){
+	fmt.Println("Kø: \n")
 	for k := l; k != nil; k = k.Next(){
-		fmt.Println("List: ",k.Value)
+		fmt.Println(k.Value)
 	}
 }
 
@@ -32,20 +33,16 @@ func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
 
 			time.Sleep(3*time.Second)
 
-			elevio.SetDoorOpenLamp(false)
-			timeOut <- true //Triggers Event
+			timeOut <- true //Triggers EventTimeOut
 		}
 	}
-
-
-
-
 }
 
 func GetDirection(floor int, order int)elevio.MotorDirection{
 	dir :=  floor - order
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
+
 
 func ExecuteOrder(sensor int, order int){
 	if (order < sensor){
@@ -56,6 +53,7 @@ func ExecuteOrder(sensor int, order int){
 		elevio.SetMotorDirection(0)
 	}
 }
+
 func RemoveFirstOrder(front *list.Element){
 	front = front.Next()
 }
