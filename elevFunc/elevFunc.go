@@ -2,7 +2,7 @@ package elevFunc
 
 import (
 	"container/list"
-	elevio ".././elevio"
+	elevio "../elevio"
 	//queue ".././queue"
 	"fmt"
 	"time"
@@ -15,31 +15,45 @@ func PrintList(l *list.Element){
 		fmt.Println("List: ",k.Value)
 	}
 }
+
 func ElevInit(a int, init bool){
 	if(init == false && a == 0){
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		init = true
 	}
 }
-func OpenDoor(){
-	elevio.SetMotorDirection(0)
-	elevio.SetDoorOpenLamp(true)
-	time.Sleep(1*time.Second)
-	elevio.SetDoorOpenLamp(false)
+
+func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
+	//elevio.SetMotorDirection(0)
+	for {
+		select {
+		case <-timerReset:
+			elevio.SetDoorOpenLamp(true)
+
+			time.Sleep(3*time.Second)
+
+			elevio.SetDoorOpenLamp(false)
+			timeOut <- true //Triggers Event
+		}
+	}
+
+
+
+
 }
-func GetDirection(sensor int, order int)elevio.MotorDirection{
-	dir := sensor - order
+
+func GetDirection(floor int, order int)elevio.MotorDirection{
+	dir :=  floor - order
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
 
-func ExecuteOrder(sensor int, order int, l *list.Element){
+func ExecuteOrder(sensor int, order int){
 	if (order < sensor){
 		elevio.SetMotorDirection(elevio.MD_Down)
 	}else if (order > sensor){
 		elevio.SetMotorDirection(elevio.MD_Up)
 	}else{
 		elevio.SetMotorDirection(0)
-		OpenDoor()
 	}
 }
 func RemoveFirstOrder(front *list.Element){
@@ -68,7 +82,5 @@ func CalculateCost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirec
 	fmt.Println("FS: ", FS)
 	//return FS
 }
-// ((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))   
-// ((d<0) && (c_dir>0) && (button.Button == 0)) || ((d>0) && (c_dir>0) && (button.Button == 1))      
-
-
+// ((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))
+// ((d<0) && (c_dir>0) && (button.Button == 0)) || ((d>0) && (c_dir>0) && (button.Button == 1))

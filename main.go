@@ -5,6 +5,7 @@ import (
 	elevio "./elevio"
 	queue "./queue"
 	task "./eventHandler"
+	elevFunc "./elevFunc"
 )
 const (
 	C_TYPE = "udp"
@@ -29,9 +30,13 @@ func main(){
 	floorSensor := make(chan int)
 	obstr := make(chan bool)
 	stop := make(chan bool)
+	timeOut := make(chan bool)
+	timerReset := make(chan bool)
+
+
 	//transmitt := make(chan interface{})
 	//receive := make(chan interface{})
-	
+
 	task.StartBroadcast()
 	queue.InitQueue()
 	elevio.SetMotorDirection(elevio.MD_Down)
@@ -39,12 +44,10 @@ func main(){
 	go elevio.PollFloorSensor(floorSensor)
 	go elevio.PollObstructionSwitch(obstr)
 	go elevio.PollStopButton(stop)
-
-
-	
+	go elevFunc.OpenDoor(timeOut, timerReset)
 
 	for{
-		task.HandleEvents(button, floorSensor, obstr, stop, localL, remoteL)
-	}	
+		task.HandleEvents(button, floorSensor, obstr, stop, localL, remoteL, timeOut, timerReset)
+	}
 
 }

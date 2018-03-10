@@ -2,7 +2,7 @@ package queue
 
 import (
 	"container/list"
-	".././elevio"
+	"../elevio"
 	//"fmt"
 )
 const (
