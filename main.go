@@ -6,6 +6,7 @@ import (
 	queue "./queue"
 	task "./eventHandler"
 	elevFunc "./elevFunc"
+	//"time"
 )
 const (
 	C_TYPE = "udp"
@@ -32,8 +33,7 @@ func main(){
 	stop := make(chan bool)
 	timeOut := make(chan bool)
 	timerReset := make(chan bool)
-
-
+	lights := make(chan int)
 	//transmitt := make(chan interface{})
 	//receive := make(chan interface{})
 
@@ -46,6 +46,7 @@ func main(){
 	go elevio.PollObstructionSwitch(obstr)
 	go elevio.PollStopButton(stop)
 	go elevFunc.OpenDoor(timeOut, timerReset)
+	go elevFunc.HandleLights(lights)
 
 	for{
 		task.HandleEvents(button, floorSensor, obstr, stop, localL, remoteL, timeOut, timerReset)

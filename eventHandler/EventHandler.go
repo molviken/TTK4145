@@ -73,39 +73,34 @@ func GetDirection(floor int, order int) elevio.MotorDirection{
 }
 
 func EventNewLocalOrder(localL *list.List, button_pressed elevio.ButtonEvent, timerReset chan bool){
-	fmt.Println("Event New Local Order in floor: %s, in state: %s", button_pressed.Floor, elevator1.state)
+	stateString := elevFunc.StateToString(elevator1.state)
+	fmt.Printf("Event New Local Order in state: %s \n", stateString)
+
 	queue.UpdateLocalQueue(localL, button_pressed)
+
 	switch elevator1.state {
 	case idle:
 		elevator1.curr_dir = GetDirection(elevator1.curr_floor, button_pressed.Floor)
 		elevio.SetMotorDirection(elevator1.curr_dir)
-		elevio.SetButtonLamp(button_pressed.Button, button_pressed.Floor,true)//Sett lys med en gang
 
 		if shouldStop(elevator1.curr_floor, elevator1.curr_dir, localL) {
 			elevator1.curr_dir = elevio.MD_Stop
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevator1.state = doorOpen
-			timerReset <- true //Channel for door timer, when timer is out, EventDoorTimeOut happens
+			timerReset <- true
 		}else{
 			elevator1.state = moving
 		}
 	case doorOpen:
 		if(shouldStop(elevator1.curr_floor, elevator1.curr_dir, localL)){
+			fmt.Println("I shouldStop Door open")
+			timerReset <- true
 		}
 
 	case moving:
-		fmt.Println("Moving")
-
-		//nothing
-
-	default:
-		fmt.Println("I default")
-		if(localL.Front() != nil){
-			elevFunc.ExecuteOrder(elevator1.curr_floor, localL.Front().Value.(*elevio.ButtonEvent).Floor)
-			elevator1.state = moving
-		//Sets the new direction if there are remaining floors
+		fmt.Println("Moving\n")
 	}
-	}
+
 }
 
 
@@ -114,7 +109,8 @@ func EventNewRemoteOrder(remoteL *list.List, button_pressed elevio.ButtonEvent){
 }
 
 func EventFloorReached(floor int, localL *list.List, timerReset chan bool){
-	fmt.Println("Event Floor Reached \n", floor)
+	stateString := elevFunc.StateToString(elevator1.state)
+	fmt.Printf("Event Floor Reached in state %s \n",stateString)
 	elevator1.curr_floor = floor
 	//Lights
 
@@ -125,7 +121,7 @@ func EventFloorReached(floor int, localL *list.List, timerReset chan bool){
 			elevator1.curr_dir = elevio.MD_Stop
 			elevator1.state = doorOpen
 			timerReset <- true
-			//Channel for door timer, when timer is out, EventDoorTimeOut happens
+
 		}else if(localL.Front().Value.(*elevio.ButtonEvent).Floor == floor){
 			localL.Remove(localL.Front())
 
@@ -143,7 +139,8 @@ func EventFloorReached(floor int, localL *list.List, timerReset chan bool){
 
 
 func EventDoorTimeOut(localL *list.List, timerReset chan bool){
-	fmt.Println("Event Door Timout in state\n", elevator1.state)
+	stateString := elevFunc.StateToString(elevator1.state)
+	fmt.Printf("Event Door TimeOut in state %s \n",stateString)
 	//elevFunc.PrintList(localL.Front())
 	switch elevator1.state{
 	case doorOpen:
@@ -159,8 +156,8 @@ func EventDoorTimeOut(localL *list.List, timerReset chan bool){
 			elevator1.state = idle
 			}
 		}
-
-	fmt.Println("elevator state after timeout is : ", elevator1.state)
+	stateString = elevFunc.StateToString(elevator1.state)
+	fmt.Printf("Elevator state after timeout is : %s \n", stateString)
 }
 
 func shouldStop(floorSensor int, dir elevio.MotorDirection, l *list.List) bool{

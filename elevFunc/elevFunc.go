@@ -17,6 +17,22 @@ func PrintList(l *list.Element){
 	}
 }
 
+
+
+func StateToString(state int) string{
+	switch state {
+	case 0:
+		return "idle"
+	case 1:
+		return "moving"
+	case 2:
+		return "doorOpen"
+	default:
+		return "Not a valid state"
+
+	}
+
+}
 func DuplicateOrder(button elevio.ButtonEvent, localL *list.List) bool{
 	for k := localL.Front(); k != nil; k = k.Next(){
 		if ((k.Value.(*elevio.ButtonEvent).Floor == button.Floor) && (k.Value.(*elevio.ButtonEvent).Button == button.Button)) {
@@ -28,16 +44,16 @@ func DuplicateOrder(button elevio.ButtonEvent, localL *list.List) bool{
 
 
 func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
-	//elevio.SetMotorDirection(0)
+	const doorTime = 3 * time.Second
+	timer := time.NewTimer(0*time.Second)
+
 	for {
 		select {
 		case <-timerReset:
-
-			elevio.SetDoorOpenLamp(true)
-
-			time.Sleep(3*time.Second)
-
-			timeOut <- true //Triggers EventTimeOut
+			timer.Reset(doorTime)
+		case <-timer.C:
+			timer.Stop()
+			timeOut <- true
 		}
 	}
 }
