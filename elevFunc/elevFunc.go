@@ -17,18 +17,22 @@ func PrintList(l *list.Element){
 	}
 }
 
-func ElevInit(a int, init bool){
-	if(init == false && a == 0){
-		elevio.SetMotorDirection(elevio.MD_Stop)
-		init = true
+func DuplicateOrder(button elevio.ButtonEvent, localL *list.List) bool{
+	for k := localL.Front(); k != nil; k = k.Next(){
+		if ((k.Value.(*elevio.ButtonEvent).Floor == button.Floor) && (k.Value.(*elevio.ButtonEvent).Button == button.Button)) {
+			return true
+		}
 	}
+	return false
 }
+
 
 func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
 	//elevio.SetMotorDirection(0)
 	for {
 		select {
 		case <-timerReset:
+
 			elevio.SetDoorOpenLamp(true)
 
 			time.Sleep(3*time.Second)
@@ -54,9 +58,7 @@ func ExecuteOrder(sensor int, order int){
 	}
 }
 
-func RemoveFirstOrder(front *list.Element){
-	front = front.Next()
-}
+
 // ALGORITHM:	FS = Suitability score		N = Floors -1		d = distance
 // (1) Towards the call, same direction
 //		FS = (N+2) - d

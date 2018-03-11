@@ -51,7 +51,16 @@ func Init(addr string, numFloors int) {
 	_initialized = true
 }
 
+func InitElevator() int{
+		SetMotorDirection(MD_Down)
+		floor := getFloor()
 
+		for floor == -1{
+				floor = getFloor()
+		}
+		SetMotorDirection(MD_Stop)
+		return floor
+}
 
 func SetMotorDirection(dir MotorDirection) {
 	_mtx.Lock()
