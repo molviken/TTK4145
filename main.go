@@ -4,35 +4,33 @@ import (
 	"container/list"
 	elevio "./elevio"
 	//queue "./queue"
+	peers "./network/peers"
 	task "./eventHandler"
 	elevFunc "./elevFunc"
-	"os"
 	bcast "./network/bcast"
+	assigner "./ElevAssigner"
 	"flag"
+	"os"
+
 	//"time"
 )
-const (
-	C_TYPE = "udp"
-	C_HOST = "localhost"
-	C_IP = "129.241.187.159"  // Localip pålogget Eduroam
-	H_IP = "192.168.43.131" // Localip pålogget hotspot
-	PORT_ELEV = ""
-)
+
 	type Channels struct {
 	button chan elevio.ButtonEvent
 	floorSensor chan int
 	obstr chan bool
 	stop chan bool
-	transmitt chan interface{}
-	receive chan interface{}
+	//transmitt chan task.UDP
+	//receive chan task.UDP
 }
 
 
 
 
 func main(){
-	var localL = list.New()
-	var remoteL = list.New()
+	//ip := elevio.GetMyIP()
+
+
 	var id string
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
@@ -44,9 +42,14 @@ func main(){
 	stop := make(chan bool)
 	timeOut := make(chan bool)
 	timerReset := make(chan bool)
+	UDPpTransmit := make(chan assigner.UDPmsg)
+	UDPReceive := make(chan assigner.UDPMsg)
+	//costTransmit := make(chan assigner.CostReply)
+	//costReceive := make(chan assigner.CostReply)
+
+	peerUpdateCh := make(chan peers.PeerUpdate)
+	peerTxEnable := make(chan bool)
 	//lights := make(chan int)
-	transmitt := make(chan task.UDPmsg)
-	receive := make(chan task.UDPmsg)
 
 	task.StartBroadcast(port)
 	//Init(4)
@@ -59,12 +62,17 @@ func main(){
 	go elevio.PollObstructionSwitch(obstr)
 	go elevio.PollStopButton(stop)
 	go elevFunc.OpenDoor(timeOut, timerReset)
-	go bcast.Transmitter(15657, transmitt)
-	go bcast.Receiver(15657, receive)
+	go bcast.Transmitter(15657, UDPTransmit)
+	go bcast.Receiver(15657, UDPReceive)
+	//go bcast.Transmitter(15657, costTransmit)
+	//go bcast.Receiver(15657, costReceive)
+	//go assigner.ChooseElevator(UDPReceive, peerUpdateCh)
 	//go elevFunc.HandleLights(lights)
+	go peers.Transmitter(15658, string(id), peerTxEnable)
+	go peers.Receiver(15658, peerUpdateCh)
 
 	for{
-		task.HandleEvents(button, floorSensor, obstr, stop, localL, remoteL, timeOut, timerReset, receive, transmitt)
+		task.HandleEvents(button, floorSensor, obstr, stop, timeOut, timerReset, UDPReceive, UDPTransmit, peerUpdateCh, id)
 	}
 
 }

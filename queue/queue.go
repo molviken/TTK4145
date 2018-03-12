@@ -23,6 +23,8 @@ func InitQueue(){
 	//remoteL := list.New()
 }
 
+var remoteOrders map[elevio.ButtonEvent]int
+
 func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List)bool{
 	for j := localL.Front(); j != nil; j = j.Next(){
 		if (j.Value.(*elevio.ButtonEvent).Button == buttonType && j.Value.(*elevio.ButtonEvent).Floor == floor){
@@ -42,12 +44,7 @@ func UpdateLocalQueue(l *list.List, order elevio.ButtonEvent){
 }
 
 
-func UpdateRemoteQueue(l *list.List, order elevio.ButtonEvent){
-	e := new(elevio.ButtonEvent)
-	e = &order
-	l.PushBack(e)
-
-}
+//func UpdateRemoteQueue(order elevio.ButtonEvent, elevatorID int){}
 
 func RemoveLocalOrder(ll *list.List, order *list.Element){
 	ll.Remove(order)
@@ -58,7 +55,7 @@ func RemoveRemoteOrder(rl *list.List, order *list.Element){
 }
 /*This function finds the cost of adding an order to the queue, not sure what arguments
 it needs to figure it out*/
-func Cost(button *elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) int {
+func Cost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) int {
 	var FS int
 	d := button.Floor - floor
 	if (d<0){d=-d}
