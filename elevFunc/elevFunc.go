@@ -8,7 +8,9 @@ import (
 	"time"
 )
 const(
-	N = 4-1 // Number of floors -1
+	 // Number of floors
+	NumFloors = 4
+	NumButtons = 3
 )
 func PrintList(l *list.Element){
 	fmt.Println("Kø: \n")
@@ -18,6 +20,19 @@ func PrintList(l *list.Element){
 }
 
 
+func SyncButtonLights(localL *list.List, remoteL *list.List){
+
+for i := 0; i < NumFloors; i++ {
+	for k := 0; k < NumButtons; k++ {
+		if (k == elevio.BT_HallUp && i == NumFloors-1) || (k == elevio.BT_HallDown && i == 0) {
+			continue
+		} else {
+			switch  k{
+			case elevio.BT_Cab:
+				elevio.SetButtonLamp(i, k, queue.IsLocalOrder(i, k, localL))
+			case elevio.BT_HallUp, elevio.BT_HallDown:
+				//Do the same for remoteOrders
+}
 
 func StateToString(state int) string{
 	switch state {

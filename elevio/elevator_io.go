@@ -59,6 +59,7 @@ func InitElevator() int{
 				floor = getFloor()
 		}
 		SetMotorDirection(MD_Stop)
+		fmt.Printf("Elevator initialized")
 		return floor
 }
 

@@ -38,9 +38,11 @@ func main(){
 	//receive := make(chan interface{})
 
 	task.StartBroadcast()
+	Init(addr string, numFloors int)
 	startFloor := elevio.InitElevator()
+
 	task.EventHandlerInit(startFloor)
-	queue.InitQueue()
+	//queue.InitQueue()
 	go elevio.PollButtons(button)
 	go elevio.PollFloorSensor(floorSensor)
 	go elevio.PollObstructionSwitch(obstr)

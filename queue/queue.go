@@ -23,6 +23,15 @@ func InitQueue(){
 	//remoteL := list.New()
 }
 
+func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List){
+	for j := localL.Front(); j != nil; j = j.Next(){
+		if  {
+
+		}
+	}
+
+}
+
 /*Probably need more functions here, maybe put shouldStop in here?*/
 
 func UpdateLocalQueue(l *list.List, order elevio.ButtonEvent){
