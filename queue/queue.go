@@ -23,12 +23,13 @@ func InitQueue(){
 	//remoteL := list.New()
 }
 
-func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List){
+func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List)bool{
 	for j := localL.Front(); j != nil; j = j.Next(){
-		if  {
-
+		if (j.Value.(*elevio.ButtonEvent).Button == buttonType && j.Value.(*elevio.ButtonEvent).Floor == floor){
+			return true
 		}
 	}
+	return false
 
 }
 

@@ -28,8 +28,8 @@ type elevator struct{
 	curr_dir elevio.MotorDirection
 	state int
 }
-
 var elevator1 elevator
+
 
 /*
 NewOrder: trggered when there is a new order added to the queue
@@ -37,6 +37,11 @@ FloorReached: when a floor is reached
 DoorTimout: When the door has been open for three seconds in state openDoor, handle what happens next
 ShouldStop: At each floor we check if there is an order to take if it is convinient
 */
+type UDPmsg struct{
+	Id int
+	Msg elevio.ButtonEvent
+}
+
 func EventHandlerInit(startFloor int){
 	elevator1.curr_floor = startFloor
 	elevator1.curr_dir = elevio.MD_Stop
@@ -46,14 +51,16 @@ func EventHandlerInit(startFloor int){
 
 
 func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr chan bool, stop chan bool,
-	localL *list.List, remoteL *list.List, timeOut chan bool, timerReset chan bool){
+	localL *list.List, remoteL *list.List, timeOut chan bool, timerReset chan bool, receive chan UDPmsg, transmitt chan UDPmsg){
 	select{
 	case button_pressed:= <- button:
 			if (button_pressed.Button == elevio.BT_Cab && !elevFunc.DuplicateOrder(button_pressed, localL)){
 				EventNewLocalOrder(localL, button_pressed, timerReset)
 				elevFunc.PrintList(localL.Front())
+
 			}else if(button_pressed.Button != elevio.BT_Cab){
-				EventNewRemoteOrder(remoteL, button_pressed)
+				EventNewRemoteOrder(remoteL, button_pressed, transmitt)
+
 			}
 
 	case floor := <- floorSensor:
@@ -64,6 +71,12 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 		//case stop := <- channel.stop:
 	case <- timeOut:
 		EventDoorTimeOut(localL, timerReset)
+
+	case a := <- receive:
+		fmt.Println(a)
+		fmt.Println(a.Id)
+		fmt.Println(a.Msg)
+
 	}
 }
 
@@ -71,6 +84,7 @@ func GetDirection(floor int, order int) elevio.MotorDirection{
 	dir :=  floor - order
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
+
 
 func EventNewLocalOrder(localL *list.List, button_pressed elevio.ButtonEvent, timerReset chan bool){
 	stateString := elevFunc.StateToString(elevator1.state)
@@ -104,8 +118,10 @@ func EventNewLocalOrder(localL *list.List, button_pressed elevio.ButtonEvent, ti
 }
 
 
-func EventNewRemoteOrder(remoteL *list.List, button_pressed elevio.ButtonEvent){
-	queue.UpdateRemoteQueue(remoteL, button_pressed)
+func EventNewRemoteOrder(remoteL *list.List, button_pressed elevio.ButtonEvent, transmitt chan UDPmsg){
+	id := 1
+	msg := UDPmsg{id,button_pressed}
+	transmitt <- msg
 }
 
 func EventFloorReached(floor int, localL *list.List, timerReset chan bool){
@@ -185,7 +201,7 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, l *list.List) bool{
 	return false
 }
 
-func StartBroadcast(){
-	elevio.Init("localhost:15657", 4)
-	conn.DialBroadcastUDP(15678)
+func StartBroadcast(port string){
+	elevio.Init("localhost:"+port, 4)
+	conn.DialBroadcastUDP(15675)
 }

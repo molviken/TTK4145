@@ -3,7 +3,7 @@ package elevFunc
 import (
 	"container/list"
 	elevio "../elevio"
-	//queue ".././queue"
+	queue "../queue"
 	"fmt"
 	"time"
 )
@@ -22,18 +22,21 @@ func PrintList(l *list.Element){
 
 func SyncButtonLights(localL *list.List, remoteL *list.List){
 
-for i := 0; i < NumFloors; i++ {
-	for k := 0; k < NumButtons; k++ {
-		if (k == elevio.BT_HallUp && i == NumFloors-1) || (k == elevio.BT_HallDown && i == 0) {
-			continue
-		} else {
-			switch  k{
-			case elevio.BT_Cab:
-				elevio.SetButtonLamp(i, k, queue.IsLocalOrder(i, k, localL))
-			case elevio.BT_HallUp, elevio.BT_HallDown:
-				//Do the same for remoteOrders
+	for i := 0; i < NumFloors; i++ {
+		for k := 0; k < NumButtons; k++ {
+			if (k == 0 && i == NumFloors-1) || (k == 1 && i == 0) {
+				continue
+			} else {
+				switch  k{
+				case 2:
+					elevio.SetButtonLamp(elevio.BT_Cab, i, queue.IsLocalOrder(i, elevio.BT_Cab, localL))
+				case 0, 1:
+					//Do the same for remoteOrders
+				}
+			}
+		}
+	}
 }
-
 func StateToString(state int) string{
 	switch state {
 	case 0:
@@ -106,9 +109,9 @@ func CalculateCost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirec
 	if( ((c_dir < 0) && (d > 0)) || ((c_dir > 0) && (d < 0)) ){
 		FS = 1
 	} else if (((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))){
-		FS = (N+1) - d
+		FS = (NumFloors) - d
 	} else{
-		FS = (N+2) - d
+		FS = (NumFloors+1) - d
 	}
 	fmt.Println("FS: ", FS)
 	//return FS
