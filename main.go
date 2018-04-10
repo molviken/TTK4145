@@ -11,8 +11,9 @@ import (
 	assigner "./ElevAssigner"
 	"flag"
 	"os"
-
+	"fmt"
 	//"time"
+	"strconv"
 )
 
 	type Channels struct {
@@ -25,7 +26,7 @@ import (
 }
 
 
-
+var costMap map[int] assigner.UDPmsg
 
 func main(){
 	//ip := elevio.GetMyIP()
@@ -35,7 +36,8 @@ func main(){
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 	port := os.Args[2]
-	
+	real_id, _ := strconv.Atoi(id)
+
 	button := make(chan elevio.ButtonEvent)
 	floorSensor := make(chan int)
 	obstr := make(chan bool)
@@ -44,6 +46,7 @@ func main(){
 	timerReset := make(chan bool)
 	UDPTransmit := make(chan assigner.UDPmsg)
 	UDPReceive := make(chan assigner.UDPmsg)
+	UpdateRemote := make(chan elevio.ButtonEvent)
 	//costTransmit := make(chan assigner.CostReply)
 	//costReceive := make(chan assigner.CostReply)
 
@@ -55,7 +58,8 @@ func main(){
 	//Init(4)
 	startFloor := elevio.InitElevator()
 
-	task.EventHandlerInit(startFloor)
+	task.EventHandlerInit(startFloor, real_id)
+
 	//queue.InitQueue()
 	go elevio.PollButtons(button)
 	go elevio.PollFloorSensor(floorSensor)
@@ -70,9 +74,9 @@ func main(){
 	//go elevFunc.HandleLights(lights)
 	go peers.Transmitter(15658, string(id), peerTxEnable)
 	go peers.Receiver(15658, peerUpdateCh)
-
+	fmt.Println("      ",real_id)
 	for{
-		task.HandleEvents(button, floorSensor, obstr, stop, timeOut, timerReset, UDPReceive, UDPTransmit, peerUpdateCh, id)
+		task.HandleEvents(button, floorSensor, obstr, stop, timeOut, timerReset, UDPReceive, UDPTransmit, peerUpdateCh, real_id, UpdateRemote)
 	}
 
 }

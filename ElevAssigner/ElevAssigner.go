@@ -2,9 +2,9 @@ package ElevAssigner
 
 import(
   "../elevio"
-  "../queue"
+  //"../queue"
   "../network/peers"
-//  "fmt"
+  "fmt"
 )
 
 var num_received  = 0
@@ -14,6 +14,7 @@ type UDPmsg struct{
   ElevID int
   Cost int
   Order elevio.ButtonEvent
+
 }
 
 type CostReply struct {
@@ -29,27 +30,44 @@ type OrderMsg struct {
 
 
 
-var costMap map[int] UDPmsg    //Used to collect cost, if a lift is dead its cost is set to inf
 
-func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate){
-  var numOnline = len(elevMap.Peers)
+
+
+var costMap map[int] UDPmsg
+
+var shouldInit = true
+
+func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg){
+  
+
+  if shouldInit{
+    costMap = make(map[int] UDPmsg)
+    shouldInit = false
+    fmt.Println("Costmap initialized")
+  }
 
   costMap[msg.ElevID] = msg
+  
+  var numOnline = len(elevMap.Peers)
+  
   num_received += 1
+  
 
   if num_received == numOnline {
+    PrintCostMap()
 
+    var highestCostMsg = findHighestCost(costMap)
 
-          var highestCostMsg = findHighestCost(costMap)
-
-          queue.UpdateRemoteQueue(highestCostMsg.ElevID, highestCostMsg.Order)
-          num_received = 0
-
-        }
+    num_received = 0
+    highestCostMsg.Cost = highestCostMsg.ElevID
+    fmt.Println(highestCostMsg.Cost)
+    highestCostMsg.MsgID = 3
+    transmitt <- highestCostMsg
+  }
 }
 
 
-func findHighestCost(costMap map[int]UDPmsg)UDPmsg{
+func findHighestCost(costMap map[int]UDPmsg) UDPmsg{
   highestCost := 0
   var highestMsg UDPmsg
   for _, costMsg := range(costMap) {
@@ -64,3 +82,12 @@ func findHighestCost(costMap map[int]UDPmsg)UDPmsg{
   }
   return highestMsg
 }
+func PrintCostMap(){
+  fmt.Println(" ")
+  fmt.Println("Costmap:")
+  for val, key := range costMap {
+        fmt.Print(val)
+        fmt.Println(key)
+    }
+    fmt.Println(" ")
+  }

@@ -3,7 +3,7 @@ package queue
 import (
 	"container/list"
 	"../elevio"
-	//"fmt"
+	"fmt"
 )
 const (
 	N = 4-1 // num floors - 1
@@ -22,7 +22,7 @@ func InitQueue(){
 	//localL := list.New()
 	//remoteL := list.New()
 }
-
+var shouldInit = true
 var remoteOrders map[elevio.ButtonEvent]int
 
 func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List)bool{
@@ -35,14 +35,32 @@ func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List)boo
 
 }
 
+func IsRemoteOrder(floor int, buttonType elevio.ButtonType)bool{
+	var temp elevio.ButtonEvent
+	temp.Button = buttonType
+	temp.Floor = floor
+	if val, ok:=remoteOrders[temp]; ok{
+		if val != 0 {
+			return true
+		}
+	}
+	return false
+}
 
-func UpdateLocalQueue(l *list.List, order elevio.ButtonEvent){
+
+func AddLocalOrder(l *list.List, order elevio.ButtonEvent){
 	e := new(elevio.ButtonEvent)
 	e = &order
 	l.PushBack(e)
 }
 
-func UpdateRemoteQueue(ID int, remoteOrder elevio.ButtonEvent){
+func AddRemoteOrder(ID int, remoteOrder elevio.ButtonEvent){
+	if shouldInit{
+    remoteOrders = make(map[elevio.ButtonEvent]int)
+    shouldInit = false
+    fmt.Println("RemoteOrder map initialized")
+  }
+  
 	remoteOrders[remoteOrder] = ID
 }
 
@@ -87,13 +105,22 @@ func DuplicateOrderLocal(ll *list.List, order elevio.ButtonEvent)bool{
 	return false
 }
 
-func DuplicateOrderRemote(rl *list.List, order elevio.ButtonEvent)bool{
-	if (rl.Front() != nil){
-		for k := rl.Front(); k != nil; k = k.Next(){
-			if (k.Value.(elevio.ButtonEvent) == order){
-				return true
-			}
+func DuplicateOrderRemote(order elevio.ButtonEvent)bool{
+	
+	if val, ok:=remoteOrders[order]; ok{
+		if val != 0 {
+			return true
 		}
 	}
+	
 	return false
+}
+func PrintMap(){
+	fmt.Println(" ")
+	fmt.Println("map:")
+	for val, key := range remoteOrders {
+        fmt.Print(val)
+        fmt.Println(key)
+    }
+    fmt.Println(" ")
 }

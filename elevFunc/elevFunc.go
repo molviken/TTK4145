@@ -13,14 +13,14 @@ const(
 	NumButtons = 3
 )
 func PrintList(l *list.Element){
-	fmt.Println("Kø: \n")
+	fmt.Println("Kø: ")
 	for k := l; k != nil; k = k.Next(){
 		fmt.Println(k.Value)
 	}
 }
 
 //Sets light for all orders in the remote and local queue
-func SyncButtonLights(localL *list.List, remoteL *list.List){
+func SyncButtonLights(localL *list.List, remoteL map[elevio.ButtonEvent] int){
 
 	for i := 0; i < NumFloors; i++ {
 		for k := 0; k < NumButtons; k++ {
@@ -31,6 +31,8 @@ func SyncButtonLights(localL *list.List, remoteL *list.List){
 				case 2:
 					elevio.SetButtonLamp(elevio.BT_Cab, i, queue.IsLocalOrder(i, elevio.BT_Cab, localL))
 				case 0, 1:
+					elevio.SetButtonLamp(elevio.BT_HallUp, i, queue.IsRemoteOrder(i, elevio.BT_HallUp))
+					elevio.SetButtonLamp(elevio.BT_HallDown, i, queue.IsRemoteOrder(i, elevio.BT_HallDown))
 
 				}
 			}
@@ -118,3 +120,6 @@ func CalculateCost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirec
 }
 // ((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))
 // ((d<0) && (c_dir>0) && (button.Button == 0)) || ((d>0) && (c_dir>0) && (button.Button == 1))
+
+
+
