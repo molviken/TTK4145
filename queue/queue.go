@@ -35,7 +35,6 @@ func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List)boo
 
 }
 
-/*Probably need more functions here, maybe put shouldStop in here?*/
 
 func UpdateLocalQueue(l *list.List, order elevio.ButtonEvent){
 	e := new(elevio.ButtonEvent)
@@ -43,18 +42,21 @@ func UpdateLocalQueue(l *list.List, order elevio.ButtonEvent){
 	l.PushBack(e)
 }
 
+func UpdateRemoteQueue(ID int, remoteOrder elevio.ButtonEvent){
+	remoteOrders[remoteOrder] = ID
+}
 
-//func UpdateRemoteQueue(order elevio.ButtonEvent, elevatorID int){}
 
 func RemoveLocalOrder(ll *list.List, order *list.Element){
 	ll.Remove(order)
 }
 
-func RemoveRemoteOrder(rl *list.List, order *list.Element){
-	rl.Remove(order)
+func RemoveRemoteOrder(remoteOrder elevio.ButtonEvent){
+	remoteOrders[remoteOrder] = 0 //When the ID is 0 there is no order for that button
 }
-/*This function finds the cost of adding an order to the queue, not sure what arguments
-it needs to figure it out*/
+
+/*This function finds the cost of adding an order to the queue*/
+
 func Cost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) int {
 	var FS int
 	d := button.Floor - floor

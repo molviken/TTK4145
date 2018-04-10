@@ -1,7 +1,7 @@
 package main
 
 import (
-	"container/list"
+	//"container/list"
 	elevio "./elevio"
 	//queue "./queue"
 	peers "./network/peers"
@@ -35,15 +35,15 @@ func main(){
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
 	port := os.Args[2]
-
+	
 	button := make(chan elevio.ButtonEvent)
 	floorSensor := make(chan int)
 	obstr := make(chan bool)
 	stop := make(chan bool)
 	timeOut := make(chan bool)
 	timerReset := make(chan bool)
-	UDPpTransmit := make(chan assigner.UDPmsg)
-	UDPReceive := make(chan assigner.UDPMsg)
+	UDPTransmit := make(chan assigner.UDPmsg)
+	UDPReceive := make(chan assigner.UDPmsg)
 	//costTransmit := make(chan assigner.CostReply)
 	//costReceive := make(chan assigner.CostReply)
 

@@ -19,7 +19,7 @@ func PrintList(l *list.Element){
 	}
 }
 
-
+//Sets light for all orders in the remote and local queue
 func SyncButtonLights(localL *list.List, remoteL *list.List){
 
 	for i := 0; i < NumFloors; i++ {
@@ -31,7 +31,7 @@ func SyncButtonLights(localL *list.List, remoteL *list.List){
 				case 2:
 					elevio.SetButtonLamp(elevio.BT_Cab, i, queue.IsLocalOrder(i, elevio.BT_Cab, localL))
 				case 0, 1:
-					//Do the same for remoteOrders
+
 				}
 			}
 		}
