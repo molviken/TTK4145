@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"../elevio"
 	"fmt"
+	assigner "../ElevAssigner"
 )
 const (
 	N = 4-1 // num floors - 1
@@ -79,17 +80,20 @@ func Cost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) int
 	var FS int
 	d := button.Floor - floor
 	if (d<0){d=-d}
-	//if (((d<0) && (c_dir>0) && (button.Button == 0)) || ((d>0) && (c_dir>0) && (button.Button == 1))){
 	if( ((c_dir < 0) && (d > 0)) || ((c_dir > 0) && (d < 0)) ){
 		//fmt.Println("(3) Away from the call")
 		FS = 1
+	} else if (d == 0){
+		FS = (N+2) - d
 	} else if (((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))){
 		//fmt.Println("(2) Towards the call, opposite direction")
 		FS = (N+1) - d
 	} else{
 		//fmt.Println("(1) Towards the call, same direction")
-		FS = (N+2) - d
+		FS = (N+3) - d
+
 	}
+
 	//fmt.Println("FS: ", FS)
 	return FS
 }
@@ -106,6 +110,9 @@ func DuplicateOrderLocal(ll *list.List, order elevio.ButtonEvent)bool{
 }
 
 func DuplicateOrderRemote(order elevio.ButtonEvent)bool{
+	PrintMap()
+	fmt.Println(order.Button)
+	fmt.Println(order.Floor)
 	
 	if val, ok:=remoteOrders[order]; ok{
 		if val != 0 {
@@ -124,3 +131,53 @@ func PrintMap(){
     }
     fmt.Println(" ")
 }
+
+func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elevId int, transmitt chan assigner.UDPmsg, isCab bool){
+	fmt.Println("Dritt:   ", )
+	if (localL.Front() != nil){
+	if (isCab == true){
+		localL.Remove(localL.Front())
+	}
+	
+	for k := localL.Front(); k != nil; k = k.Next(){
+		if (k.Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab && k.Value.(*elevio.ButtonEvent).Floor == floor){
+			localL.Remove(k)
+			fmt.Println("local cab fjerna")
+		}else if (k.Value.(*elevio.ButtonEvent).Button == elevio.BT_HallUp && k.Value.(*elevio.ButtonEvent).Floor == floor && dir == 1){
+			localL.Remove(k)
+			var btEvent elevio.ButtonEvent
+			btEvent.Button = k.Value.(*elevio.ButtonEvent).Button
+			btEvent.Floor = k.Value.(*elevio.ButtonEvent).Floor
+			assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
+			fmt.Println("remote up fjerna")
+		}else if (k.Value.(*elevio.ButtonEvent).Button == elevio.BT_HallDown && k.Value.(*elevio.ButtonEvent).Floor == floor && dir == -1){
+			localL.Remove(k)
+			var btEvent elevio.ButtonEvent
+			btEvent.Button = k.Value.(*elevio.ButtonEvent).Button
+			btEvent.Floor = k.Value.(*elevio.ButtonEvent).Floor
+			assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
+			fmt.Println("remote ned fjerna")
+		}
+	}
+	}	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

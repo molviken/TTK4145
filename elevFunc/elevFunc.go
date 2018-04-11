@@ -64,7 +64,7 @@ func DuplicateOrder(button elevio.ButtonEvent, localL *list.List) bool{
 
 
 func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
-	const doorTime = 3 * time.Second
+	const doorTime = 1 * time.Second
 	timer := time.NewTimer(0*time.Second)
 
 	for {

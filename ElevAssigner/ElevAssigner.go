@@ -60,7 +60,7 @@ func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg)
 
     num_received = 0
     highestCostMsg.Cost = highestCostMsg.ElevID
-    fmt.Println(highestCostMsg.Cost)
+    fmt.Println("Vinner ID: ", highestCostMsg.Cost)
     highestCostMsg.MsgID = 3
     transmitt <- highestCostMsg
   }
@@ -90,4 +90,10 @@ func PrintCostMap(){
         fmt.Println(key)
     }
     fmt.Println(" ")
+  }
+  
+  func TransmittUDP(msgID int, elevID int, cost int, order elevio.ButtonEvent, transmitt chan UDPmsg){
+  	//var msg UDPmsg
+  	msg := UDPmsg{msgID, elevID, cost, order}
+  	transmitt <- msg
   }
