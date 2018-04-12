@@ -72,8 +72,8 @@ func main(){
 	//go bcast.Receiver(15657, costReceive)
 	//go assigner.ChooseElevator(UDPReceive, peerUpdateCh)
 	//go elevFunc.HandleLights(lights)
-	go peers.Transmitter(15658, string(id), peerTxEnable)
-	go peers.Receiver(15658, peerUpdateCh)
+	go peers.Transmitter(15659, string(id), peerTxEnable)
+	go peers.Receiver(15659, peerUpdateCh)
 	fmt.Println("      ",real_id)
 	for{
 		task.HandleEvents(button, floorSensor, obstr, stop, timeOut, timerReset, UDPReceive, UDPTransmit, peerUpdateCh, real_id, UpdateRemote)

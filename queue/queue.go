@@ -27,7 +27,7 @@ func InitQueue() {
 }
 
 var shouldInit = true
-var remoteOrders map[elevio.ButtonEvent]int
+var RemoteOrders map[elevio.ButtonEvent]int
 
 func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List) bool {
 	for j := localL.Front(); j != nil; j = j.Next() {
@@ -43,7 +43,7 @@ func IsRemoteOrder(floor int, buttonType elevio.ButtonType) bool {
 	var temp elevio.ButtonEvent
 	temp.Button = buttonType
 	temp.Floor = floor
-	if val, ok := remoteOrders[temp]; ok {
+	if val, ok := RemoteOrders[temp]; ok {
 		if val != 0 {
 			return true
 		}
@@ -59,12 +59,12 @@ func AddLocalOrder(l *list.List, order elevio.ButtonEvent) {
 
 func AddRemoteOrder(ID int, remoteOrder elevio.ButtonEvent) {
 	if shouldInit {
-		remoteOrders = make(map[elevio.ButtonEvent]int)
+		RemoteOrders = make(map[elevio.ButtonEvent]int)
 		shouldInit = false
 		fmt.Println("RemoteOrder map initialized")
 	}
 
-	remoteOrders[remoteOrder] = ID
+	RemoteOrders[remoteOrder] = ID
 }
 
 func RemoveLocalOrder(ll *list.List, order *list.Element) {
@@ -72,7 +72,8 @@ func RemoveLocalOrder(ll *list.List, order *list.Element) {
 }
 
 func RemoveRemoteOrder(remoteOrder elevio.ButtonEvent) {
-	remoteOrders[remoteOrder] = 0 //When the ID is 0 there is no order for that button
+	fmt.Println("Removing order ")
+	RemoteOrders[remoteOrder] = 0 //When the ID is 0 there is no order for that button
 }
 
 /*This function finds the cost of adding an order to the queue*/
@@ -117,7 +118,7 @@ func DuplicateOrderRemote(order elevio.ButtonEvent) bool {
 	fmt.Println(order.Button)
 	fmt.Println(order.Floor)
 
-	if val, ok := remoteOrders[order]; ok {
+	if val, ok := RemoteOrders[order]; ok {
 		if val != 0 {
 			return true
 		}
@@ -127,18 +128,18 @@ func DuplicateOrderRemote(order elevio.ButtonEvent) bool {
 }
 func PrintMap() {
 	fmt.Println(" ")
-	fmt.Println("map:")
-	for val, key := range remoteOrders {
-		fmt.Print(val)
-		fmt.Println(key)
+	fmt.Println("Remote Order Map:")
+	for key, val := range RemoteOrders {
+		fmt.Printf("ButtonEvent:  %d  Elevator ID:   %d    \n", key, val)
 	}
 	fmt.Println(" ")
 }
 
 func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elevId int, transmitt chan assigner.UDPmsg, isCab bool) {
-	fmt.Println("Dritt:   ")
+	fmt.Println("Scanning for orders at floor")
+
 	if localL.Front() != nil {
-		if isCab == true {
+		if isCab == true && localL.Front().Value.(*elevio.ButtonEvent).Floor == floor{
 			localL.Remove(localL.Front())
 		}
 
@@ -152,6 +153,8 @@ func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elev
 				btEvent.Button = k.Value.(*elevio.ButtonEvent).Button
 				btEvent.Floor = k.Value.(*elevio.ButtonEvent).Floor
 				assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
+
+				RemoveRemoteOrder(btEvent)
 				fmt.Println("remote up fjerna")
 			} else if k.Value.(*elevio.ButtonEvent).Button == elevio.BT_HallDown && k.Value.(*elevio.ButtonEvent).Floor == floor && dir == -1 {
 				localL.Remove(k)
@@ -160,6 +163,7 @@ func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elev
 				btEvent.Floor = k.Value.(*elevio.ButtonEvent).Floor
 				assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
 				fmt.Println("remote ned fjerna")
+				RemoveRemoteOrder(btEvent)
 			}
 		}
 	}
