@@ -23,7 +23,7 @@ var shouldInit = true //For initiliazing the cost map
 
 
 func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg) {
-
+	num_received += 1
 	if shouldInit {
 		costMap = make(map[int]UDPmsg)
 		shouldInit = false
@@ -31,12 +31,11 @@ func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg)
 	}
 	costMap[msg.ElevID] = msg
 	var numOnline = len(elevMap.Peers)
-	num_received += 1
 	if num_received == numOnline {
 		var highestCostMsg = findHighestCost(costMap)
 		num_received = 0
 		highestCostMsg.Message = highestCostMsg.ElevID //Transmitt winner ID
-		fmt.Println("Vinner ID: ", highestCostMsg.Message)
+		//fmt.Println("Vinner ID: ", highestCostMsg.Message)
 		highestCostMsg.MsgID = 3
 		transmitt <- highestCostMsg
 	}

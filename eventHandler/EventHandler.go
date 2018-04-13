@@ -80,25 +80,22 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 
 	case peers := <-peerUpdateCh:
 		EventPeerUpdate(peers, transmitt)
+		if (len(peers.Lost)!=0) {EventLostPeer(transmitt, id, peers, timerReset)}
+		//if (peers.New != "") {}
 
 	case msg := <-receive:
 		EventReceivedMessage(msg, peersOnline, elevator1.curr_floor, id, transmitt, timerReset)
-
 	}
 }
-
-
 
 func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int, id int, transmitt chan assigner.UDPmsg, timerReset chan bool) {
 	stateString := elevFunc.StateToString(elevator1.state)
 	fmt.Printf("Event Received Message in state: %s \n", stateString)
-
 	switch msg.MsgID {
 	case 1:
 		assigner.ChooseElevator(msg, peers, transmitt)
 	case 2:
 		cost := queue.Cost(msg.Order, floor, elevator1.curr_dir)
-
 		/*Checking if the new order is in the same direction (buttonType) as the current order. If not the cost is decreased by 2*/
 		if localL.Front() != nil && localL.Front().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Front().Value.(*elevio.ButtonEvent).Button != msg.Order.Button {
 			cost -= 2
@@ -106,7 +103,6 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 		assigner.TransmittUDP(1, id, cost, msg.Order, transmitt)
 	case 3:
 		if msg.Message == id && !queue.DuplicateOrderRemote(msg.Order) {
-			fmt.Println("ID var rett")
 			if msg.Order.Floor == floor {
 				timerReset <- true
 				assigner.TransmittUDP(4, id, 0, msg.Order, transmitt)
@@ -114,11 +110,9 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 				EventNewLocalOrder(msg.Order, timerReset, id, transmitt)
 			}
 		}
-		
 		queue.AddRemoteOrder(msg.ElevID, msg.Order)
 	case 4:
 		queue.RemoveRemoteOrder(msg.Order)
-
 	}
 }
 
@@ -128,12 +122,12 @@ func EventPeerUpdate(p peers.PeerUpdate, transmitt chan assigner.UDPmsg) {
 	fmt.Printf("  New peer:      %q\n", p.New)
 	fmt.Printf("  Lost peer:     %q\n", p.Lost)
 	peersOnline = p
-
+	/*
 	if len(p.Lost) != 0 {
 		id, _ := strconv.Atoi(p.Lost[0])
 		fmt.Println("Peer id: ", id)
 		assigner.LostPeer(id, transmitt)
-	}
+	}*/
 
 }
 
@@ -145,7 +139,7 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 
 	switch elevator1.state {
 	case idle:
-		elevator1.curr_dir = GetDirection(elevator1.curr_floor, button_pressed.Floor)
+		elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, button_pressed.Floor)
 		elevio.SetMotorDirection(elevator1.curr_dir)
 
 		if shouldStop(elevator1.curr_floor, elevator1.curr_dir, elevId, transmitt) {
@@ -169,8 +163,8 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 
 func EventNewRemoteOrder(button_pressed elevio.ButtonEvent, transmitt chan assigner.UDPmsg, elevId int, msgId int) {
 
-	stateString := elevFunc.StateToString(elevator1.state)
-	fmt.Printf("Event New Remote Order in state: %s \n", stateString)
+	//stateString := elevFunc.StateToString(elevator1.state)
+	//fmt.Printf("Event New Remote Order in state: %s \n", stateString)
 
 	var msg assigner.UDPmsg
 	msg.MsgID = msgId
@@ -297,29 +291,34 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 	return false
 }
 
-func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, elevMap peers.PeerUpdate) {
-	fmt.Println("Peer lost! Remote orders are being divided")
-	peersAlive := len(elevMap.Peers)
-	switch peersAlive {
-	case 1:
+func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, peerStatus peers.PeerUpdate, timerReset chan bool) {
+	fmt.Println("Peer: lost! Remote orders are being divided")
+	
+	peersAlive := len(peerStatus.Peers)
+	switch {
+	case peersAlive == 1:
 		fmt.Println("All other peers lost, have to take all remote orders")
 		for k, v := range queue.RemoteOrders{
-			
+			if (v != elevId && v != 0){
+				EventNewLocalOrder(k, timerReset, elevId, transmitt)
+			}
+
 		}
+	case peersAlive != 1:
+		remainingId1, _ := strconv.Atoi(peerStatus.Peers[0])
+		remainingId2, _ := strconv.Atoi(peerStatus.Peers[1])
+		lostId, _ 		:= strconv.Atoi(peerStatus.Lost[0])
+		if( (remainingId1 == elevId && elevId > remainingId2) || (remainingId2 == elevId && elevId > remainingId1) ){
 
-
-
+			fmt.Println("One peer lost: ", lostId)
+			for k, v := range queue.RemoteOrders{
+				if (v == lostId){
+					EventNewRemoteOrder(k, transmitt, elevId, 2)
+					fmt.Println("sender du ut?")
+				}
+			}
+		}
 	}
-
-	
-
-
-
-
-	for k, v := range queue.RemoteOrders{
-		EventNewRemoteOrder(k, transmitt, elevID, 2)
-	}
-
 }
 
 
