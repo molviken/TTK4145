@@ -60,7 +60,7 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 	receive chan assigner.UDPmsg, transmitt chan assigner.UDPmsg, peerUpdateCh chan peers.PeerUpdate, id int, updateRemote chan elevio.ButtonEvent) {
 	select {
 	case button_pressed := <-button:
-
+		
 		if button_pressed.Button == elevio.BT_Cab && !elevFunc.DuplicateOrder(button_pressed, localL) {
 			EventNewLocalOrder(button_pressed, timerReset, id, transmitt)
 			elevFunc.PrintList(localL.Front())
@@ -85,34 +85,89 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 
 	case msg := <-receive:
 		EventReceivedMessage(msg, peersOnline, elevator1.curr_floor, id, transmitt, timerReset)
+
+	case obstruction := <- obstr:
+		fmt.Println(obstruction)
+		EventObstruction(obstruction, id, transmitt)
+
+	case stopBt := <- stop:
+		EventStop(stopBt, transmitt, timerReset, id)
 	}
+}
+
+func EventStop(stop bool, transmitt chan assigner.UDPmsg, timerReset chan bool, elevId int){
+	if (stop == true){
+		elevator1.curr_dir = elevio.MD_Stop
+		for k, v := range queue.RemoteOrders{
+			if (v == elevId && v != 0){
+				assigner.TransmittUDP(5, elevId, 0, k, transmitt)
+			}
+		}
+	}
+}
+
+func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg){
+	prevDir := 1
+	switch obstr{
+	case true:
+		elevator1.curr_dir = elevio.MD_Stop
+		elevator1.state = idle
+		for k, v := range queue.RemoteOrders{
+			if (v == elevId && v != 0){
+				assigner.TransmittUDP(5, elevId, 0, k, transmitt)
+			}
+		}	
+	case false:
+		elevator1.curr_dir = prevDir
+	}
+	fmt.Println("Dir etter obstr: ", elevator1.curr_dir)
+	
 }
 
 func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int, id int, transmitt chan assigner.UDPmsg, timerReset chan bool) {
 	stateString := elevFunc.StateToString(elevator1.state)
 	fmt.Printf("Event Received Message in state: %s \n", stateString)
+	fmt.Println("ID   : ", msg.MsgID)
 	switch msg.MsgID {
 	case 1:
 		assigner.ChooseElevator(msg, peers, transmitt)
 	case 2:
 		cost := queue.Cost(msg.Order, floor, elevator1.curr_dir)
 		/*Checking if the new order is in the same direction (buttonType) as the current order. If not the cost is decreased by 2*/
-		if localL.Front() != nil && localL.Front().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Front().Value.(*elevio.ButtonEvent).Button != msg.Order.Button {
+		
+		if localL.Front() != nil && localL.Back().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Back().Value.(*elevio.ButtonEvent).Button != msg.Order.Button {
 			cost -= 2
 		}
 		assigner.TransmittUDP(1, id, cost, msg.Order, transmitt)
 	case 3:
-		if msg.Message == id && !queue.DuplicateOrderRemote(msg.Order) {
+		fmt.Println("MSG: ", msg.Message)
+		if msg.Message == id{// && !queue.DuplicateOrderRemote(msg.Order) {
+			fmt.Println("Hvorfor får ingen motta?")
 			if msg.Order.Floor == floor {
 				timerReset <- true
 				assigner.TransmittUDP(4, id, 0, msg.Order, transmitt)
 			} else {
-				EventNewLocalOrder(msg.Order, timerReset, id, transmitt)
+				fmt.Println("han fikk den: ", id)
+				if(!elevFunc.DuplicateOrder(msg.Order, localL)){
+					EventNewLocalOrder(msg.Order, timerReset, id, transmitt)
+				}
+				
 			}
 		}
 		queue.AddRemoteOrder(msg.ElevID, msg.Order)
 	case 4:
 		queue.RemoveRemoteOrder(msg.Order)
+	
+	case 5:
+		var cost int
+		fmt.Println("Obstruction")
+		if msg.ElevID == id {
+			cost = 0
+		}else{
+			cost = queue.Cost(msg.Order, floor, elevator1.curr_dir)
+
+		}
+		assigner.TransmittUDP(1, id, cost, msg.Order, transmitt)
 	}
 }
 
@@ -294,25 +349,33 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, peerStatus peers.PeerUpdate, timerReset chan bool) {
 	fmt.Println("Peer: lost! Remote orders are being divided")
 	
+
 	peersAlive := len(peerStatus.Peers)
 	switch {
 	case peersAlive == 1:
 		fmt.Println("All other peers lost, have to take all remote orders")
 		for k, v := range queue.RemoteOrders{
 			if (v != elevId && v != 0){
+				queue.RemoteOrders[k] = elevId
 				EventNewLocalOrder(k, timerReset, elevId, transmitt)
 			}
 
 		}
 	case peersAlive != 1:
+		var lostUDP assigner.UDPmsg
+		lostUDP.Message = 0
 		remainingId1, _ := strconv.Atoi(peerStatus.Peers[0])
 		remainingId2, _ := strconv.Atoi(peerStatus.Peers[1])
+		fmt.Println("rem1: ", remainingId1)
+		fmt.Println("rem2: ", remainingId2)
 		lostId, _ 		:= strconv.Atoi(peerStatus.Lost[0])
+		assigner.CostMap[lostId] = lostUDP
 		if( (remainingId1 == elevId && elevId > remainingId2) || (remainingId2 == elevId && elevId > remainingId1) ){
 
 			fmt.Println("One peer lost: ", lostId)
 			for k, v := range queue.RemoteOrders{
 				if (v == lostId){
+					queue.RemoteOrders[k] = 0
 					EventNewRemoteOrder(k, transmitt, elevId, 2)
 					fmt.Println("sender du ut?")
 				}

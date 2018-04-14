@@ -17,7 +17,7 @@ type UDPmsg struct {
 }
 
 
-var costMap map[int]UDPmsg
+var CostMap map[int]UDPmsg
 
 var shouldInit = true //For initiliazing the cost map
 
@@ -25,14 +25,14 @@ var shouldInit = true //For initiliazing the cost map
 func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg) {
 	num_received += 1
 	if shouldInit {
-		costMap = make(map[int]UDPmsg)
+		CostMap = make(map[int]UDPmsg)
 		shouldInit = false
 		fmt.Println("Costmap initialized")
 	}
-	costMap[msg.ElevID] = msg
+	CostMap[msg.ElevID] = msg
 	var numOnline = len(elevMap.Peers)
 	if num_received == numOnline {
-		var highestCostMsg = findHighestCost(costMap)
+		var highestCostMsg = findHighestCost(CostMap)
 		num_received = 0
 		highestCostMsg.Message = highestCostMsg.ElevID //Transmitt winner ID
 		//fmt.Println("Vinner ID: ", highestCostMsg.Message)
@@ -44,13 +44,13 @@ func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg)
 func findHighestCost(costMap map[int]UDPmsg) UDPmsg {
 	highestCost := 0
 	var highestMsg UDPmsg
-	for _, costMsg := range costMap {
-		if costMsg.Message > highestCost {
-			highestCost = costMsg.Message
-			highestMsg = costMsg
-		} else if costMsg.Message == highestCost { //Dersom alle har samme kost
-			if costMsg.ElevID < highestMsg.ElevID {
-				highestMsg = costMsg
+	for _, CostMsg := range costMap {
+		if CostMsg.Message > highestCost {
+			highestCost = CostMsg.Message
+			highestMsg = CostMsg
+		} else if CostMsg.Message == highestCost { //Dersom alle har samme kost
+			if CostMsg.ElevID < highestMsg.ElevID {
+				highestMsg = CostMsg
 			}
 		}
 	}
@@ -61,7 +61,7 @@ func findHighestCost(costMap map[int]UDPmsg) UDPmsg {
 func PrintCostMap() {
 	fmt.Println(" ")
 	fmt.Println("Costmap:")
-	for val, key := range costMap {
+	for val, key := range CostMap {
 		fmt.Print(val)
 		fmt.Println(key)
 	}

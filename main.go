@@ -47,11 +47,9 @@ func main(){
 	UDPTransmit := make(chan assigner.UDPmsg)
 	UDPReceive := make(chan assigner.UDPmsg)
 	UpdateRemote := make(chan elevio.ButtonEvent)
-	//costTransmit := make(chan assigner.CostReply)
-	//costReceive := make(chan assigner.CostReply)
-
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
+	
 	//lights := make(chan int)
 
 	task.StartBroadcast(port)
