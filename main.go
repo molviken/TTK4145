@@ -16,15 +16,6 @@ import (
 	"strconv"
 )
 
-	type Channels struct {
-	button chan elevio.ButtonEvent
-	floorSensor chan int
-	obstr chan bool
-	stop chan bool
-	//transmitt chan task.UDP
-	//receive chan task.UDP
-}
-
 
 var costMap map[int] assigner.UDPmsg
 
@@ -49,7 +40,7 @@ func main(){
 	UpdateRemote := make(chan elevio.ButtonEvent)
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
-	
+
 	//lights := make(chan int)
 
 	task.StartBroadcast(port)

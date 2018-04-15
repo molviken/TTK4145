@@ -12,6 +12,9 @@ const(
 	NumFloors = 4
 	NumButtons = 3
 )
+
+
+
 func PrintList(l *list.Element){
 	fmt.Println("Kø: ")
 	for k := l; k != nil; k = k.Next(){
@@ -118,18 +121,3 @@ func CalculateCost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirec
 	fmt.Println("FS: ", FS)
 	//return FS
 }
-// ((d<0) && (c_dir>0) && (button.Button == 1)) || ((d>0) && (c_dir>0) && (button.Button == 0))
-// ((d<0) && (c_dir>0) && (button.Button == 0)) || ((d>0) && (c_dir>0) && (button.Button == 1))
-
-
-/*
-func GetDirection(floor int, order int) elevio.MotorDirection {
-	dir := floor - order
-	if dir < 0 {
-		return elevio.MD_Up
-	} else if dir > 0 {
-		return elevio.MD_Down
-	} else {
-		return elevio.MD_Stop
-	}
-}*/

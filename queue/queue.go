@@ -3,15 +3,17 @@ package queue
 import (
 	"container/list"
 	"fmt"
-
+	"io/ioutil"
+    "encoding/json"
 	assigner "../ElevAssigner"
 	"../elevio"
+	"strconv"
 )
 
 const (
 	N = 4 - 1 // num floors - 1
 )
-
+var backupList []elevio.ButtonEvent
 /* Define queues, we need a local queue and a remote queue. The remote queue should contain all
 "outside" orders (of all elevators) in case of one of them dying. The local queue should only containt
 "inside" orders of that elevator, and the outside orders assigned to that elevator.
@@ -24,6 +26,40 @@ Initialize the linked list*/
 func InitQueue() {
 	//localL := list.New()
 	//remoteL := list.New()
+}
+
+
+func UpdateBackup(l *list.List){
+	if l.Front() != nil {
+		for k := l.Front(); k != nil; k = k.Next() {
+            temp := elevio.ButtonEvent{k.Value.(*elevio.ButtonEvent).Floor, k.Value.(*elevio.ButtonEvent).Button}
+			backupList = append(backupList,temp)
+		}
+	}
+    fmt.Println("Lista før marshal: ", backupList)
+    b1, _ := json.Marshal(backupList)
+    //b2, _ := json.Marshal(test2)
+    ioutil.WriteFile("Backup", b1, 0644)
+}
+
+func ReadBackup(){
+	i := 0
+	var backup []elevio.ButtonEvent
+	c, _ := ioutil.ReadFile("Backup")
+	json.Unmarshal(c, &backup)
+	fmt.Println("Order saved for backup: ")
+	for _, order := range backup {
+		i += 1
+		switch order.Button{
+		case elevio.BT_HallUp:
+			fmt.Println("Bestilling "+strconv.Itoa(i)+":  Hall Up - Floor "+strconv.Itoa(order.Floor))
+		case elevio.BT_HallDown:
+			fmt.Println("Bestilling "+strconv.Itoa(i)+":  Hall Down - Floor "+strconv.Itoa(order.Floor))
+		case elevio.BT_Cab:
+			fmt.Println("Bestilling "+strconv.Itoa(i)+":  Cab - Floor "+strconv.Itoa(order.Floor))
+		}
+
+    }
 }
 
 var shouldInit = true

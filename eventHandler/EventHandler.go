@@ -60,7 +60,7 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 	receive chan assigner.UDPmsg, transmitt chan assigner.UDPmsg, peerUpdateCh chan peers.PeerUpdate, id int, updateRemote chan elevio.ButtonEvent) {
 	select {
 	case button_pressed := <-button:
-		
+
 		if button_pressed.Button == elevio.BT_Cab && !elevFunc.DuplicateOrder(button_pressed, localL) {
 			EventNewLocalOrder(button_pressed, timerReset, id, transmitt)
 			elevFunc.PrintList(localL.Front())
@@ -107,7 +107,7 @@ func EventStop(stop bool, transmitt chan assigner.UDPmsg, timerReset chan bool, 
 }
 
 func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg){
-	prevDir := 1
+	prevDir := elevator1.curr_dir
 	switch obstr{
 	case true:
 		elevator1.curr_dir = elevio.MD_Stop
@@ -116,12 +116,12 @@ func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg){
 			if (v == elevId && v != 0){
 				assigner.TransmittUDP(5, elevId, 0, k, transmitt)
 			}
-		}	
+		}
 	case false:
 		elevator1.curr_dir = prevDir
 	}
 	fmt.Println("Dir etter obstr: ", elevator1.curr_dir)
-	
+
 }
 
 func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int, id int, transmitt chan assigner.UDPmsg, timerReset chan bool) {
@@ -134,7 +134,7 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 	case 2:
 		cost := queue.Cost(msg.Order, floor, elevator1.curr_dir)
 		/*Checking if the new order is in the same direction (buttonType) as the current order. If not the cost is decreased by 2*/
-		
+
 		if localL.Front() != nil && localL.Back().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Back().Value.(*elevio.ButtonEvent).Button != msg.Order.Button {
 			cost -= 2
 		}
@@ -151,13 +151,13 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 				if(!elevFunc.DuplicateOrder(msg.Order, localL)){
 					EventNewLocalOrder(msg.Order, timerReset, id, transmitt)
 				}
-				
+
 			}
 		}
 		queue.AddRemoteOrder(msg.ElevID, msg.Order)
 	case 4:
 		queue.RemoveRemoteOrder(msg.Order)
-	
+
 	case 5:
 		var cost int
 		fmt.Println("Obstruction")
@@ -191,7 +191,8 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 	fmt.Printf("Event New Local Order in state: %s \n", stateString)
 
 	queue.AddLocalOrder(localL, button_pressed)
-
+	queue.UpdateBackup(localL)
+	queue.ReadBackup()
 	switch elevator1.state {
 	case idle:
 		elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, button_pressed.Floor)
@@ -241,7 +242,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 		isCab = false
 	}
 	/**/
-	
+
 	switch elevator1.state {
 
 	//Eneste problem nå er at dersom en hallup og halldown første og neste i lista blir den stuck, burde ikke få begge deler i lista egentlig men det skjer..
@@ -257,7 +258,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 			if localL.Front() != nil {
 				queue.ScanForDouble(elevator1.curr_dir, elevator1.curr_floor, localL, id, transmitt, isCab)
 			}
-			
+
 			elevator1.curr_dir = elevio.MD_Stop
 			elevio.SetMotorDirection(elevio.MD_Stop)
 
@@ -311,6 +312,7 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 			switch {
 			case k.Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab:
 				localL.Remove(k)
+				queue.UpdateBackup(localL)
 				isCab = true
 				return true
 			case dir == elevio.MD_Up:
@@ -322,8 +324,8 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 					assigner.TransmittUDP(4, elevId, 0, tempButton, transmitt) //telling peers to delete order
 
 					localL.Remove(k) //remove from local queue
+					queue.UpdateBackup(localL)
 
-					
 					queue.RemoveRemoteOrder(tempButton)
 
 					return true
@@ -348,7 +350,7 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 
 func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, peerStatus peers.PeerUpdate, timerReset chan bool) {
 	fmt.Println("Peer: lost! Remote orders are being divided")
-	
+
 
 	peersAlive := len(peerStatus.Peers)
 	switch {
