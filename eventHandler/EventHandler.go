@@ -135,15 +135,16 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 		cost := queue.Cost(msg.Order, floor, elevator1.curr_dir)
 		/*Checking if the new order is in the same direction (buttonType) as the current order. If not the cost is decreased by 2*/
 
-		if localL.Front() != nil && localL.Back().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Back().Value.(*elevio.ButtonEvent).Button != msg.Order.Button {
+		if localL.Front() != nil && localL.Back().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Back().Value.(*elevio.ButtonEvent).Button != msg.Order.Button && localL.Back().Value.(*elevio.ButtonEvent).Floor == msg.Order.Floor{
 			cost -= 2
+
 		}
 		assigner.TransmittUDP(1, id, cost, msg.Order, transmitt)
 	case 3:
 		fmt.Println("MSG: ", msg.Message)
-		if msg.Message == id{// && !queue.DuplicateOrderRemote(msg.Order) {
+		if msg.Message == id{
 			fmt.Println("Hvorfor får ingen motta?")
-			if msg.Order.Floor == floor {
+			if (msg.Order.Floor == floor && elevator1.curr_dir == elevio.MD_Stop ){
 				timerReset <- true
 				assigner.TransmittUDP(4, id, 0, msg.Order, transmitt)
 			} else {
@@ -155,8 +156,10 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 			}
 		}
 		queue.AddRemoteOrder(msg.ElevID, msg.Order)
+		elevFunc.SyncButtonLights(localL)
 	case 4:
 		queue.RemoveRemoteOrder(msg.Order)
+		elevFunc.SyncButtonLights(localL)
 
 	case 5:
 		var cost int
@@ -191,6 +194,7 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 	fmt.Printf("Event New Local Order in state: %s \n", stateString)
 
 	queue.AddLocalOrder(localL, button_pressed)
+	elevFunc.SyncButtonLights(localL)
 	queue.UpdateBackup(localL)
 	queue.ReadBackup()
 	switch elevator1.state {
@@ -252,6 +256,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 				tempButton.Button = localL.Front().Value.(*elevio.ButtonEvent).Button
 				tempButton.Floor = floor
 				queue.RemoveRemoteOrder(tempButton)
+				
 				assigner.TransmittUDP(4, id, 0, tempButton, transmitt)
 			}
 			localL.Remove(localL.Front())
@@ -261,7 +266,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 
 			elevator1.curr_dir = elevio.MD_Stop
 			elevio.SetMotorDirection(elevio.MD_Stop)
-
+			elevFunc.SyncButtonLights(localL)
 			elevator1.state = doorOpen
 			timerReset <- true
 
@@ -272,6 +277,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevator1.curr_dir = elevio.MD_Stop
 			elevator1.state = doorOpen
+			elevFunc.SyncButtonLights(localL)
 			timerReset <- true
 		}
 	}

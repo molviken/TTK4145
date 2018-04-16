@@ -32,6 +32,7 @@ func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg)
 	CostMap[msg.ElevID] = msg
 	var numOnline = len(elevMap.Peers)
 	if num_received == numOnline {
+		PrintCostMap()
 		var highestCostMsg = findHighestCost(CostMap)
 		num_received = 0
 		highestCostMsg.Message = highestCostMsg.ElevID //Transmitt winner ID

@@ -13,7 +13,7 @@ import (
 const (
 	N = 4 - 1 // num floors - 1
 )
-var backupList []elevio.ButtonEvent
+
 /* Define queues, we need a local queue and a remote queue. The remote queue should contain all
 "outside" orders (of all elevators) in case of one of them dying. The local queue should only containt
 "inside" orders of that elevator, and the outside orders assigned to that elevator.
@@ -30,13 +30,16 @@ func InitQueue() {
 
 
 func UpdateBackup(l *list.List){
-	if l.Front() != nil {
+	var backupList []elevio.ButtonEvent
+	if (l.Front() != nil) {
 		for k := l.Front(); k != nil; k = k.Next() {
-            temp := elevio.ButtonEvent{k.Value.(*elevio.ButtonEvent).Floor, k.Value.(*elevio.ButtonEvent).Button}
-			backupList = append(backupList,temp)
+			if (k.Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab){
+            	temp := elevio.ButtonEvent{k.Value.(*elevio.ButtonEvent).Floor, k.Value.(*elevio.ButtonEvent).Button}
+				backupList = append(backupList,temp)				
+			}
 		}
 	}
-    fmt.Println("Lista før marshal: ", backupList)
+    //fmt.Println("Lista før marshal: ", backupList)
     b1, _ := json.Marshal(backupList)
     //b2, _ := json.Marshal(test2)
     ioutil.WriteFile("Backup", b1, 0644)
@@ -66,11 +69,14 @@ var shouldInit = true
 var RemoteOrders map[elevio.ButtonEvent]int
 
 func IsLocalOrder(floor int, buttonType elevio.ButtonType, localL *list.List) bool {
-	for j := localL.Front(); j != nil; j = j.Next() {
+	if localL.Front() != nil {
+		for j := localL.Front(); j != nil; j = j.Next() {
 		if j.Value.(*elevio.ButtonEvent).Button == buttonType && j.Value.(*elevio.ButtonEvent).Floor == floor {
 			return true
 		}
 	}
+}
+	
 	return false
 
 }
@@ -79,11 +85,13 @@ func IsRemoteOrder(floor int, buttonType elevio.ButtonType) bool {
 	var temp elevio.ButtonEvent
 	temp.Button = buttonType
 	temp.Floor = floor
+	if(!shouldInit){
 	if val, ok := RemoteOrders[temp]; ok {
 		if val != 0 {
 			return true
 		}
 	}
+}
 	return false
 }
 
