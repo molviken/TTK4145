@@ -6,6 +6,7 @@ import (
 	queue "../queue"
 	"fmt"
 	"time"
+
 )
 const(
 	 // Number of floors
@@ -83,7 +84,7 @@ func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
 }
 
 
-func ObstructionTimeOut(obstr chan<- bool, obstrTimerReset <-chan bool, elevState int){
+func ObstructionTimeOut(obstr chan<- bool, obstrTimerReset <-chan bool, l *list.List ){
 	const obstrTime = 15* time.Second
 	obstrTimer := time.NewTimer(0*time.Second)
 
@@ -91,10 +92,13 @@ func ObstructionTimeOut(obstr chan<- bool, obstrTimerReset <-chan bool, elevStat
 		select {
 		case <-obstrTimerReset:
 			obstrTimer.Reset(obstrTime)
+			fmt.Println("Timer reset")
 
 		case <-obstrTimer.C:
-			obstrTimer.Stop()
-			if(elevState != 0){
+			PrintList(l.Front())
+			fmt.Println("Timer expired")
+			//obstrTimer.Stop()
+			if(l.Front() != nil){
 				obstr <- true
 			}
 

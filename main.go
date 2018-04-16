@@ -10,7 +10,7 @@ import (
 	bcast "./network/bcast"
 	assigner "./ElevAssigner"
 	"flag"
-	"os"
+	//"os"
 	"fmt"
 	//"time"
 	"strconv"
@@ -26,7 +26,7 @@ func main(){
 	var id string
 	flag.StringVar(&id, "id", "", "id of this peer")
 	flag.Parse()
-	port := os.Args[2]
+	//port := os.Args[2]
 	real_id, _ := strconv.Atoi(id)
 
 	button := make(chan elevio.ButtonEvent)
@@ -45,8 +45,9 @@ func main(){
 
 	//lights := make(chan int)
 
-	task.StartBroadcast(port)
+	task.StartBroadcast("15657")
 	//Init(4)
+	elevio.Init("localhost:15657", 4)
 	startFloor := elevio.InitElevator()
 
 	task.EventHandlerInit(startFloor, real_id)
@@ -59,7 +60,7 @@ func main(){
 	go elevFunc.OpenDoor(timeOut, timerReset)
 	go bcast.Transmitter(15657, UDPTransmit)
 	go bcast.Receiver(15657, UDPReceive)
-	go elevFunc.ObstructionTimeOut(obstr,obstrTimerReset, task.GetElevatorState())
+	go elevFunc.ObstructionTimeOut(obstr,obstrTimerReset, task.LocalL)
 	//go bcast.Transmitter(15657, costTransmit)
 	//go bcast.Receiver(15657, costReceive)
 	//go assigner.ChooseElevator(UDPReceive, peerUpdateCh)

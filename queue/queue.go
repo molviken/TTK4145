@@ -133,13 +133,13 @@ func Cost(button elevio.ButtonEvent, floor int, c_dir elevio.MotorDirection) int
 		//fmt.Println("(3) Away from the call")
 		FS = 1
 	} else if d == 0 {
-		FS = (N + 2) - d
+		FS = (N + 3) - d
 	} else if ((d < 0) && (c_dir > 0) && (button.Button == 1)) || ((d > 0) && (c_dir > 0) && (button.Button == 0)) {
 		//fmt.Println("(2) Towards the call, opposite direction")
 		FS = (N + 1) - d
 	} else {
 		//fmt.Println("(1) Towards the call, same direction")
-		FS = (N + 3) - d
+		FS = (N + 2) - d
 
 	}
 

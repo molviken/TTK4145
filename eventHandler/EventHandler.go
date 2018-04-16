@@ -22,7 +22,7 @@ moving - Moving and can be between floors or going past a floor
 doorOpen - At a floor with the door open
 */
 var peersOnline peers.PeerUpdate
-var localL = list.New()
+var LocalL = list.New()
 var isCab = false
 
 
@@ -56,8 +56,8 @@ func EventHandlerInit(startFloor int, elevId int) {
 	elevator1.curr_floor = startFloor
 	elevator1.curr_dir = elevio.MD_Stop
 	elevator1.obstr = false
-	queue.ReadBackup(localL)
-	if localL.Front() != nil {
+	queue.ReadBackup(LocalL)
+	if LocalL.Front() != nil {
 		elevator1.state = moving
 	}else{
 		elevator1.state = idle
@@ -73,9 +73,9 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 	select {
 	case button_pressed := <-button:
 
-		if button_pressed.Button == elevio.BT_Cab && !elevFunc.DuplicateOrder(button_pressed, localL) {
+		if button_pressed.Button == elevio.BT_Cab && !elevFunc.DuplicateOrder(button_pressed, LocalL) {
 			EventNewLocalOrder(button_pressed, timerReset, id, transmitt, obstrTimerReset)
-			elevFunc.PrintList(localL.Front())
+			elevFunc.PrintList(LocalL.Front())
 
 		} else if button_pressed.Button != elevio.BT_Cab && !queue.DuplicateOrderRemote(button_pressed) {
 			EventNewRemoteOrder(button_pressed, transmitt, id, 2)
@@ -84,7 +84,9 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 	case floor := <-floorSensor:
 		elevator1.obstr = false
 		EventFloorReached(floor, timerReset, id, transmitt, obstrTimerReset)
-
+		if(LocalL.Front()!=nil){
+			obstrTimerReset <- true
+		}
 	case <-timeOut:
 		EventDoorTimeOut(timerReset, id, transmitt, obstrTimerReset)
 
@@ -123,7 +125,7 @@ func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg, ti
 	case true:
 		elevio.SetMotorDirection(elevio.MD_Stop)
 		
-		if(localL.Front() != nil){
+		if(LocalL.Front() != nil){
 		//Transmitt all remote orders to other elevators
 		for k, v := range queue.RemoteOrders{
 			if (v == elevId && v != 0){
@@ -131,14 +133,14 @@ func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg, ti
 			}
 		}
 		//Remove these orders from the queue
-		for k := localL.Front(); k != nil; k = k.Next(){
+		for k := LocalL.Front(); k != nil; k = k.Next(){
 			if (k.Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab){
-				localL.Remove(k)
+				LocalL.Remove(k)
 			}
 		}
 	}
 		//Give the elevator a default local order 
-		if(localL.Front() == nil){
+		if(LocalL.Front() == nil){
 			var defaultOrder elevio.ButtonEvent
 			defaultOrder.Button = elevio.BT_Cab
 			defaultOrder.Floor = 0
@@ -171,7 +173,7 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 		}
 		/*Checking if the new order is in the same direction (buttonType) as the current order. If not the cost is decreased by 2*/
 
-		if (localL.Front() != nil && localL.Back().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && localL.Back().Value.(*elevio.ButtonEvent).Button != msg.Order.Button && localL.Back().Value.(*elevio.ButtonEvent).Floor == msg.Order.Floor && len(peersOnline.Peers) != 1){
+		if (LocalL.Front() != nil && LocalL.Back().Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab && LocalL.Back().Value.(*elevio.ButtonEvent).Button != msg.Order.Button && LocalL.Back().Value.(*elevio.ButtonEvent).Floor == msg.Order.Floor && len(peersOnline.Peers) != 1){
 			cost = 0
 		}
 		assigner.TransmittUDP(1, id, cost, msg.Order, transmitt)
@@ -181,7 +183,7 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 				timerReset <- true
 				assigner.TransmittUDP(4, id, 0, msg.Order, transmitt)
 			} else {
-				if(!elevFunc.DuplicateOrder(msg.Order, localL)){
+				if(!elevFunc.DuplicateOrder(msg.Order, LocalL)){
 					EventNewLocalOrder(msg.Order, timerReset, id, transmitt, obstrTimerReset)
 				}
 
@@ -189,11 +191,11 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 		}
 
 		queue.AddRemoteOrder(msg.ElevID, msg.Order)
-		elevFunc.SyncButtonLights(localL)
+		elevFunc.SyncButtonLights(LocalL)
 		queue.PrintMap()
 	case 4:
 		queue.RemoveRemoteOrder(msg.Order)
-		elevFunc.SyncButtonLights(localL)
+		elevFunc.SyncButtonLights(LocalL)
 
 	case 5:
 		var cost int
@@ -227,9 +229,9 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 	stateString := elevFunc.StateToString(elevator1.state)
 	fmt.Printf("Event New Local Order in state: %s \n", stateString)
 
-	queue.AddLocalOrder(localL, button_pressed)
-	elevFunc.SyncButtonLights(localL)
-	queue.UpdateBackup(localL)
+	queue.AddLocalOrder(LocalL, button_pressed)
+	elevFunc.SyncButtonLights(LocalL)
+	queue.UpdateBackup(LocalL)
 	//queue.ReadBackup()
 	switch elevator1.state {
 	case idle:
@@ -278,7 +280,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 
 
 	
-	if localL.Front() != nil && localL.Front().Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab {
+	if LocalL.Front() != nil && LocalL.Front().Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab {
 		isCab = true
 	} else {
 		isCab = false
@@ -287,33 +289,33 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 	switch elevator1.state {
 	case moving:
 		obstrTimerReset <- true //reset obstruction timer
-		if localL.Front().Value.(*elevio.ButtonEvent).Floor == floor {
+		if LocalL.Front().Value.(*elevio.ButtonEvent).Floor == floor {
 			if !isCab {
-				tempButton.Button = localL.Front().Value.(*elevio.ButtonEvent).Button
+				tempButton.Button = LocalL.Front().Value.(*elevio.ButtonEvent).Button
 				tempButton.Floor = floor
 				queue.RemoveRemoteOrder(tempButton)
 				
 				assigner.TransmittUDP(4, id, 0, tempButton, transmitt)
 			}
-			localL.Remove(localL.Front())
-			if localL.Front() != nil {
-				queue.ScanForDouble(elevator1.curr_dir, elevator1.curr_floor, localL, id, transmitt, isCab)
+			LocalL.Remove(LocalL.Front())
+			if LocalL.Front() != nil {
+				queue.ScanForDouble(elevator1.curr_dir, elevator1.curr_floor, LocalL, id, transmitt, isCab)
 			}
 
 			elevator1.curr_dir = elevio.MD_Stop
 			elevio.SetMotorDirection(elevio.MD_Stop)
-			elevFunc.SyncButtonLights(localL)
+			elevFunc.SyncButtonLights(LocalL)
 			elevator1.state = doorOpen
 			timerReset <- true
 
 		} else if shouldStop(floor, elevator1.curr_dir, id, transmitt) {
-			if localL.Front() != nil {
-				queue.ScanForDouble(elevator1.curr_dir, elevator1.curr_floor, localL, id, transmitt, isCab)
+			if LocalL.Front() != nil {
+				queue.ScanForDouble(elevator1.curr_dir, elevator1.curr_floor, LocalL, id, transmitt, isCab)
 			}
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevator1.curr_dir = elevio.MD_Stop
 			elevator1.state = doorOpen
-			elevFunc.SyncButtonLights(localL)
+			elevFunc.SyncButtonLights(LocalL)
 			timerReset <- true
 		}
 	}
@@ -325,11 +327,11 @@ func EventDoorTimeOut(timerReset chan bool, elevId int, transmitt chan assigner.
 	switch elevator1.state {
 	case doorOpen:
 		elevio.SetDoorOpenLamp(false) //turn of light
-		elevFunc.PrintList(localL.Front())
+		elevFunc.PrintList(LocalL.Front())
 		//Ready for new direction
 
-		if localL.Front() != nil {
-			elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, localL.Front().Value.(*elevio.ButtonEvent).Floor)
+		if LocalL.Front() != nil {
+			elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, LocalL.Front().Value.(*elevio.ButtonEvent).Floor)
 			elevio.SetMotorDirection(elevator1.curr_dir)
 			elevator1.state = moving
 			obstrTimerReset <- true
@@ -389,13 +391,13 @@ func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, peerStatus peers
 func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmitt chan assigner.UDPmsg) bool {
 	fmt.Println("I shouldStop")
 
-	for k := localL.Front(); k != nil; k = k.Next() {
+	for k := LocalL.Front(); k != nil; k = k.Next() {
 
 		if k.Value.(*elevio.ButtonEvent).Floor == floorSensor {
 			switch {
 			case k.Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab:
-				localL.Remove(k)
-				queue.UpdateBackup(localL)
+				LocalL.Remove(k)
+				queue.UpdateBackup(LocalL)
 				isCab = true
 				return true
 			case dir == elevio.MD_Up:
@@ -406,8 +408,8 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 					isCab = true
 					assigner.TransmittUDP(4, elevId, 0, tempButton, transmitt) //telling peers to delete order
 
-					localL.Remove(k) //remove from local queue
-					queue.UpdateBackup(localL)
+					LocalL.Remove(k) //remove from local queue
+					queue.UpdateBackup(LocalL)
 
 					queue.RemoveRemoteOrder(tempButton)
 
@@ -416,7 +418,7 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 			case dir == elevio.MD_Down:
 				if k.Value.(*elevio.ButtonEvent).Button != 0 {
 
-					localL.Remove(k) //remove from local queue
+					LocalL.Remove(k) //remove from local queue
 					tempButton.Button = k.Value.(*elevio.ButtonEvent).Button
 					tempButton.Floor = floorSensor
 
