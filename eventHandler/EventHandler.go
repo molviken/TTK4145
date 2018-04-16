@@ -82,7 +82,6 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 		}
 
 	case floor := <-floorSensor:
-		elevator1.obstr = false
 		EventFloorReached(floor, timerReset, id, transmitt, obstrTimerReset)
 		if(LocalL.Front()!=nil){
 			obstrTimerReset <- true
@@ -138,24 +137,6 @@ func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg, ti
 			}
 		}
 	}
-		//Give the elevator a default local order 
-		if(LocalL.Front() == nil){
-			var defaultOrder elevio.ButtonEvent
-			defaultOrder.Button = elevio.BT_Cab
-			defaultOrder.Floor = 0
-			EventNewLocalOrder(defaultOrder, timerReset, elevId, transmitt, obstrTimerReset)
-			
-		}
-
-	case false:
-		elevator1.curr_dir = prevDir
-		elevio.SetMotorDirection(prevDir)
-		elevator1.obstr = false
-
-	}
-
-	//fmt.Println("Dir etter obstr: ", elevator1.curr_dir)
-
 }
 
 func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int, id int, transmitt chan assigner.UDPmsg, timerReset chan bool, obstrTimerReset chan bool) {
@@ -290,12 +271,14 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 
 	if (elevator1.obstr == true){
 		elevator1.obstr = false
+		fmt.Println("OBSTRUCTION IS: ", elevator1.obstr)
 		if (LocalL.Front() != nil){
 			elevio.SetMotorDirection(elevFunc.GetDirection(elevator1.curr_floor, LocalL.Front().Value.(*elevio.ButtonEvent).Floor))	
 			elevator1.state = moving
 		}else{
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevator1.state = idle
+
 		}
 
 	}
