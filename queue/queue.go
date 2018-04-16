@@ -7,7 +7,7 @@ import (
     "encoding/json"
 	assigner "../ElevAssigner"
 	"../elevio"
-	"strconv"
+	//"strconv"
 )
 
 const (
@@ -44,24 +44,26 @@ func UpdateBackup(l *list.List){
     ioutil.WriteFile("Backup", b1, 0644)
 }
 
-func ReadBackup(){
-	i := 0
+func ReadBackup(localL *list.List){
+	//i := 0
 	var backup []elevio.ButtonEvent
-	c, _ := ioutil.ReadFile("Backup")
+	c, err := ioutil.ReadFile("Backup")
+
+	if err != nil {
+		fmt.Println("No file exists yet, please continue")
+		
+	}else{
+
 	json.Unmarshal(c, &backup)
-	fmt.Println("Order saved for backup: ")
+	fmt.Println("Orders saved from backup: ")
 	for _, order := range backup {
-		i += 1
-		switch order.Button{
-		case elevio.BT_HallUp:
-			fmt.Println("Bestilling "+strconv.Itoa(i)+":  Hall Up - Floor "+strconv.Itoa(order.Floor))
-		case elevio.BT_HallDown:
-			fmt.Println("Bestilling "+strconv.Itoa(i)+":  Hall Down - Floor "+strconv.Itoa(order.Floor))
-		case elevio.BT_Cab:
-			fmt.Println("Bestilling "+strconv.Itoa(i)+":  Cab - Floor "+strconv.Itoa(order.Floor))
+		AddLocalOrder(localL, order)
+
+		//fmt.Println("Bestilling "+strconv.Itoa(i)+":  Hall Up - Floor "+strconv.Itoa(order.Floor))
 		}
 
-    }
+	}
+	
 }
 
 var shouldInit = true
@@ -190,8 +192,7 @@ func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elev
 				assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
 				RemoveRemoteOrder(btEvent)
 		}
-
-		}
+	}
 
 
 		for k := localL.Front(); k != nil; k = k.Next() {

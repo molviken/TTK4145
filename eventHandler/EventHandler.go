@@ -55,8 +55,14 @@ ShouldStop: At each floor we check if there is an order to take if it is convini
 func EventHandlerInit(startFloor int, elevId int) {
 	elevator1.curr_floor = startFloor
 	elevator1.curr_dir = elevio.MD_Stop
-	elevator1.state = idle
 	elevator1.obstr = false
+	queue.ReadBackup(localL)
+	if localL.Front() != nil {
+		elevator1.state = moving
+	}else{
+		elevator1.state = idle
+	}
+
 }
 func GetElevatorState() int{
 	return elevator1.state
@@ -181,8 +187,10 @@ func EventReceivedMessage(msg assigner.UDPmsg, peers peers.PeerUpdate, floor int
 
 			}
 		}
+
 		queue.AddRemoteOrder(msg.ElevID, msg.Order)
 		elevFunc.SyncButtonLights(localL)
+		queue.PrintMap()
 	case 4:
 		queue.RemoveRemoteOrder(msg.Order)
 		elevFunc.SyncButtonLights(localL)
@@ -222,7 +230,7 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 	queue.AddLocalOrder(localL, button_pressed)
 	elevFunc.SyncButtonLights(localL)
 	queue.UpdateBackup(localL)
-	queue.ReadBackup()
+	//queue.ReadBackup()
 	switch elevator1.state {
 	case idle:
 		obstrTimerReset <- true
@@ -324,11 +332,13 @@ func EventDoorTimeOut(timerReset chan bool, elevId int, transmitt chan assigner.
 			elevator1.curr_dir = elevFunc.GetDirection(elevator1.curr_floor, localL.Front().Value.(*elevio.ButtonEvent).Floor)
 			elevio.SetMotorDirection(elevator1.curr_dir)
 			elevator1.state = moving
-			obstrTimerReset <- true //start obstructiontimer after door has been open
+			obstrTimerReset <- true
+			 //start obstructiontimer after door has been open
 
 			/*Check for pressing button several times while door is open*/
-		} else {
+		} else{
 			elevator1.state = idle
+
 		}
 	}
 	stateString = elevFunc.StateToString(elevator1.state)
