@@ -119,21 +119,21 @@ func EventStop(stop bool, transmitt chan assigner.UDPmsg, timerReset chan bool, 
 
 func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg, timerReset chan bool, obstrTimerReset chan bool){
 	elevator1.obstr = true //Obstruction/stop state, all cost=0 in this state 
-	prevDir := elevator1.curr_dir
 	switch obstr{
 	case true:
 		
 		if(LocalL.Front() != nil){
 		//Transmitt all remote orders to other elevators
-		for k, v := range queue.RemoteOrders{
-			if (v == elevId && v != 0){
-				assigner.TransmittUDP(5, elevId, 0, k, transmitt)
+			for k, v := range queue.RemoteOrders{
+				if (v == elevId && v != 0){
+					assigner.TransmittUDP(5, elevId, 0, k, transmitt)
+				}
 			}
-		}
 		//Remove these orders from the queue
-		for k := LocalL.Front(); k != nil; k = k.Next(){
-			if (k.Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab){
-				LocalL.Remove(k)
+			for k := LocalL.Front(); k != nil; k = k.Next(){
+				if (k.Value.(*elevio.ButtonEvent).Button != elevio.BT_Cab){
+					LocalL.Remove(k)
+				}
 			}
 		}
 	}
