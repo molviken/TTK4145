@@ -78,7 +78,7 @@ func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr ch
 			elevFunc.PrintList(LocalL.Front())
 
 		} else if button_pressed.Button != elevio.BT_Cab && !queue.DuplicateOrderRemote(button_pressed) {
-			EventNewRemoteOrder(button_pressed, transmitt, id, 2)
+			EventNewRemoteOrder(button_pressed, transmitt, id, 2,  timerReset, obstrTimerReset)
 		}
 
 	case floor := <-floorSensor:
@@ -257,9 +257,18 @@ func EventNewLocalOrder(button_pressed elevio.ButtonEvent, timerReset chan bool,
 
 }
 
-func EventNewRemoteOrder(button_pressed elevio.ButtonEvent, transmitt chan assigner.UDPmsg, elevId int, msgId int) {
+func EventNewRemoteOrder(button_pressed elevio.ButtonEvent, transmitt chan assigner.UDPmsg, elevId int, msgId int, timerReset chan bool, obstrTimerReset chan bool) {
+	if(len(peersOnline.Peers) == 1){
+		if (button_pressed.Floor == elevator1.curr_floor && elevator1.curr_dir == elevio.MD_Stop){
+			timerReset <- true
+			}else{
+				queue.AddRemoteOrder(elevId, button_pressed)
+				EventNewLocalOrder(button_pressed, timerReset, elevId, transmitt, obstrTimerReset)
 
+			}
+		
 
+	}else{
 	stateString := elevFunc.StateToString(elevator1.state)
 	fmt.Printf("Event New Remote Order in state: %s \n", stateString)
 
@@ -268,6 +277,9 @@ func EventNewRemoteOrder(button_pressed elevio.ButtonEvent, transmitt chan assig
 	msg.ElevID = elevId
 	msg.Order = button_pressed
 	transmitt <- msg
+
+	}
+	
 
 }
 
@@ -282,6 +294,7 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 			elevio.SetMotorDirection(elevFunc.GetDirection(elevator1.curr_floor, LocalL.Front().Value.(*elevio.ButtonEvent).Floor))	
 			elevator1.state = moving
 		}else{
+			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevator1.state = idle
 		}
 
@@ -388,7 +401,7 @@ func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, peerStatus peers
 			for k, v := range queue.RemoteOrders{
 				if (v == lostId){
 					queue.RemoteOrders[k] = 0
-					EventNewRemoteOrder(k, transmitt, elevId, 2)
+					EventNewRemoteOrder(k, transmitt, elevId, 2,  timerReset, obstrTimerReset)
 					fmt.Println("sender du ut?")
 				}
 			}

@@ -160,7 +160,7 @@ func DuplicateOrderLocal(ll *list.List, order elevio.ButtonEvent) bool {
 
 func DuplicateOrderRemote(order elevio.ButtonEvent) bool {
 	PrintMap()
-	fmt.Println("RemoteOrders[order] = :",RemoteOrders[order])
+	//fmt.Println("RemoteOrders[order] = :",RemoteOrders[order])
 	if val, ok := RemoteOrders[order]; ok {
 
 		if val != 0 {
