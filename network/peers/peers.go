@@ -63,7 +63,7 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 		}
 
 		// Removing dead connection
-		if(len(p.Peers != 1)){
+		if(len(p.Peers)!= 1){
 		p.Lost = make([]string, 0)
 		for k, v := range lastSeen {
 			if time.Now().Sub(v) > timeout {
