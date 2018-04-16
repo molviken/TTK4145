@@ -8,6 +8,8 @@ import (
 )
 
 var num_received = 0
+var CostMap map[int]UDPmsg
+var shouldInit = true //For initiliazing the cost map
 
 type UDPmsg struct {
 	MsgID  int
@@ -16,10 +18,6 @@ type UDPmsg struct {
 	Order  elevio.ButtonEvent
 }
 
-
-var CostMap map[int]UDPmsg
-
-var shouldInit = true //For initiliazing the cost map
 
 
 func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg) {
@@ -35,13 +33,11 @@ func ChooseElevator(msg UDPmsg, elevMap peers.PeerUpdate, transmitt chan UDPmsg)
 		PrintCostMap()
 		var highestCostMsg = findHighestCost(CostMap)
 		num_received = 0
-		highestCostMsg.Message = highestCostMsg.ElevID //Transmitt winner ID
-		//fmt.Println("Vinner ID: ", highestCostMsg.Message)
+		highestCostMsg.Message = highestCostMsg.ElevID
 		highestCostMsg.MsgID = 3
 		transmitt <- highestCostMsg
 	}
 }
-
 func findHighestCost(costMap map[int]UDPmsg) UDPmsg {
 	highestCost := 0
 	var highestMsg UDPmsg
@@ -49,7 +45,7 @@ func findHighestCost(costMap map[int]UDPmsg) UDPmsg {
 		if CostMsg.Message > highestCost {
 			highestCost = CostMsg.Message
 			highestMsg = CostMsg
-		} else if CostMsg.Message == highestCost { //Dersom alle har samme kost
+		} else if CostMsg.Message == highestCost {
 			if CostMsg.ElevID < highestMsg.ElevID {
 				highestMsg = CostMsg
 			}
@@ -57,8 +53,6 @@ func findHighestCost(costMap map[int]UDPmsg) UDPmsg {
 	}
 	return highestMsg
 }
-
-
 func PrintCostMap() {
 	fmt.Println(" ")
 	fmt.Println("Costmap:")
@@ -68,9 +62,7 @@ func PrintCostMap() {
 	}
 	fmt.Println(" ")
 }
-
 func TransmittUDP(msgID int, elevID int, message int, order elevio.ButtonEvent, transmitt chan UDPmsg) {
-	//var msg UDPmsg
 	msg := UDPmsg{msgID, elevID, message, order}
 	transmitt <- msg
 }
