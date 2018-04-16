@@ -10,7 +10,6 @@ import (
 
 	assigner "../ElevAssigner"
 	elevio "../elevio"
-	conn "../network/conn"
 	peers "../network/peers"
 	queue "../queue"
 )
@@ -435,9 +434,3 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 
 
 
-
-/*Burde ha denne et annet sted*/
-func StartBroadcast(port string) {
-	elevio.Init("localhost:"+port, 4)
-	conn.DialBroadcastUDP(15675)
-}

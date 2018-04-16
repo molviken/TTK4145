@@ -45,7 +45,6 @@ func main(){
 
 	//lights := make(chan int)
 
-	task.StartBroadcast("15657")
 	//Init(4)
 	elevio.Init("localhost:15657", 4)
 	startFloor := elevio.InitElevator()
@@ -58,15 +57,15 @@ func main(){
 	go elevio.PollObstructionSwitch(obstr)
 	go elevio.PollStopButton(stop)
 	go elevFunc.OpenDoor(timeOut, timerReset)
-	go bcast.Transmitter(15657, UDPTransmit)
-	go bcast.Receiver(15657, UDPReceive)
+	go bcast.Transmitter(20015, UDPTransmit)
+	go bcast.Receiver(20015, UDPReceive)
 	go elevFunc.ObstructionTimeOut(obstr,obstrTimerReset, task.LocalL)
 	//go bcast.Transmitter(15657, costTransmit)
 	//go bcast.Receiver(15657, costReceive)
 	//go assigner.ChooseElevator(UDPReceive, peerUpdateCh)
 	//go elevFunc.HandleLights(lights)
-	go peers.Transmitter(15659, string(id), peerTxEnable)
-	go peers.Receiver(15659, peerUpdateCh)
+	go peers.Transmitter(21015, string(id), peerTxEnable)
+	go peers.Receiver(21015, peerUpdateCh)
 	fmt.Println(" ")
 	fmt.Println("REAL ELEV ID  ",real_id)
 	for{
