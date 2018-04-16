@@ -32,7 +32,7 @@ func SyncButtonLights(localL *list.List){
 			} else {
 				switch  k{
 				case 2:
-					
+
 					elevio.SetButtonLamp(elevio.BT_Cab, i, queue.IsLocalOrder(i, elevio.BT_Cab, localL))
 				case 0, 1:
 					elevio.SetButtonLamp(elevio.BT_HallUp, i, queue.IsRemoteOrder(i, elevio.BT_HallUp))
@@ -68,7 +68,7 @@ func DuplicateOrder(button elevio.ButtonEvent, localL *list.List) bool{
 
 
 func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
-	const doorTime = 1 * time.Second
+	const doorTime = 1* time.Second
 	timer := time.NewTimer(0*time.Second)
 
 	for {
@@ -82,21 +82,32 @@ func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
 	}
 }
 
+
+func ObstructionTimeOut(obstr chan<- bool, obstrTimerReset <-chan bool, elevState int){
+	const obstrTime = 15* time.Second
+	obstrTimer := time.NewTimer(0*time.Second)
+
+	for {
+		select {
+		case <-obstrTimerReset:
+			obstrTimer.Reset(obstrTime)
+
+		case <-obstrTimer.C:
+			obstrTimer.Stop()
+			if(elevState != 0){
+				obstr <- true
+			}
+
+		}
+	}
+}
+
+
 func GetDirection(floor int, order int)elevio.MotorDirection{
 	dir :=  floor - order
 	if (dir<0){return elevio.MD_Up}else if(dir>0){return elevio.MD_Down}else{return elevio.MD_Stop}
 }
 
-
-func ExecuteOrder(sensor int, order int){
-	if (order < sensor){
-		elevio.SetMotorDirection(elevio.MD_Down)
-	}else if (order > sensor){
-		elevio.SetMotorDirection(elevio.MD_Up)
-	}else{
-		elevio.SetMotorDirection(0)
-	}
-}
 
 
 // ALGORITHM:	FS = Suitability score		N = Floors -1		d = distance

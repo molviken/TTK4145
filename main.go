@@ -40,6 +40,8 @@ func main(){
 	UpdateRemote := make(chan elevio.ButtonEvent)
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	peerTxEnable := make(chan bool)
+	obstrTimerReset := make(chan bool)
+	
 
 	//lights := make(chan int)
 
@@ -57,6 +59,7 @@ func main(){
 	go elevFunc.OpenDoor(timeOut, timerReset)
 	go bcast.Transmitter(15657, UDPTransmit)
 	go bcast.Receiver(15657, UDPReceive)
+	go elevFunc.ObstructionTimeOut(obstr,obstrTimerReset, task.GetElevatorState())
 	//go bcast.Transmitter(15657, costTransmit)
 	//go bcast.Receiver(15657, costReceive)
 	//go assigner.ChooseElevator(UDPReceive, peerUpdateCh)
@@ -66,7 +69,7 @@ func main(){
 	fmt.Println(" ")
 	fmt.Println("REAL ELEV ID  ",real_id)
 	for{
-		task.HandleEvents(button, floorSensor, obstr, stop, timeOut, timerReset, UDPReceive, UDPTransmit, peerUpdateCh, real_id, UpdateRemote)
+		task.HandleEvents(button, floorSensor, obstr, stop, timeOut, timerReset, UDPReceive, UDPTransmit, peerUpdateCh, real_id, UpdateRemote, obstrTimerReset)
 	}
 
 }

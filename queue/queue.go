@@ -24,8 +24,7 @@ The local queue needs to be saved on the disk due to the elevator dying. */
 Also start the go routine for saving all local orders to disk
 Initialize the linked list*/
 func InitQueue() {
-	//localL := list.New()
-	//remoteL := list.New()
+	
 }
 
 
@@ -180,11 +179,20 @@ func PrintMap() {
 
 func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elevId int, transmitt chan assigner.UDPmsg, isCab bool) {
 	fmt.Println("Scanning for orders at floor")
+	var btEvent elevio.ButtonEvent
 
 	if localL.Front() != nil {
-		if isCab == true && localL.Front().Value.(*elevio.ButtonEvent).Floor == floor{
+		if localL.Front().Value.(*elevio.ButtonEvent).Floor == floor{ //isCab == true && 
+			btEvent.Button = localL.Front().Value.(*elevio.ButtonEvent).Button
+			btEvent.Floor = localL.Front().Value.(*elevio.ButtonEvent).Floor
 			localL.Remove(localL.Front())
+			if(btEvent.Button != elevio.BT_Cab){
+				assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
+				RemoveRemoteOrder(btEvent)
 		}
+
+		}
+
 
 		for k := localL.Front(); k != nil; k = k.Next() {
 			if k.Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab && k.Value.(*elevio.ButtonEvent).Floor == floor {
@@ -192,7 +200,6 @@ func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elev
 				fmt.Println("local cab fjerna")
 			} else if k.Value.(*elevio.ButtonEvent).Button == elevio.BT_HallUp && k.Value.(*elevio.ButtonEvent).Floor == floor && dir == 1 {
 				localL.Remove(k)
-				var btEvent elevio.ButtonEvent
 				btEvent.Button = k.Value.(*elevio.ButtonEvent).Button
 				btEvent.Floor = k.Value.(*elevio.ButtonEvent).Floor
 				assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
@@ -201,7 +208,6 @@ func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elev
 				fmt.Println("remote up fjerna")
 			} else if k.Value.(*elevio.ButtonEvent).Button == elevio.BT_HallDown && k.Value.(*elevio.ButtonEvent).Floor == floor && dir == -1 {
 				localL.Remove(k)
-				var btEvent elevio.ButtonEvent
 				btEvent.Button = k.Value.(*elevio.ButtonEvent).Button
 				btEvent.Floor = k.Value.(*elevio.ButtonEvent).Floor
 				assigner.TransmittUDP(4, elevId, 0, btEvent, transmitt)
@@ -210,4 +216,5 @@ func ScanForDouble(dir elevio.MotorDirection, floor int, localL *list.List, elev
 			}
 		}
 	}
+
 }
