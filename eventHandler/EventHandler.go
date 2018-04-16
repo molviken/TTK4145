@@ -57,6 +57,7 @@ func EventHandlerInit(startFloor int, elevId int) {
 	elevator1.obstr = false
 	queue.ReadBackup(LocalL)
 	if LocalL.Front() != nil {
+		elevio.SetMotorDirection(elevFunc.GetDirection(elevator1.curr_floor, LocalL.Front().Value.(*elevio.ButtonEvent).Floor))
 		elevator1.state = moving
 	}else{
 		elevator1.state = idle
@@ -122,7 +123,6 @@ func EventObstruction(obstr bool, elevId int, transmitt chan assigner.UDPmsg, ti
 	prevDir := elevator1.curr_dir
 	switch obstr{
 	case true:
-		elevio.SetMotorDirection(elevio.MD_Stop)
 		
 		if(LocalL.Front() != nil){
 		//Transmitt all remote orders to other elevators
@@ -276,7 +276,16 @@ func EventFloorReached(floor int, timerReset chan bool, id int, transmitt chan a
 	fmt.Printf("Event Floor Reached in state %s \n", stateString)
 	elevator1.curr_floor = floor
 
+	if (elevator1.obstr == true){
+		elevator1.obstr = false
+		if (LocalL.Front() != nil){
+			elevio.SetMotorDirection(elevFunc.GetDirection(elevator1.curr_floor, LocalL.Front().Value.(*elevio.ButtonEvent).Floor))	
+			elevator1.state = moving
+		}else{
+			elevator1.state = idle
+		}
 
+	}
 
 	
 	if LocalL.Front() != nil && LocalL.Front().Value.(*elevio.ButtonEvent).Button == elevio.BT_Cab {
@@ -388,7 +397,7 @@ func EventLostPeer( transmitt chan assigner.UDPmsg, elevId int, peerStatus peers
 }
 
 func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmitt chan assigner.UDPmsg) bool {
-	fmt.Println("I shouldStop")
+	fmt.Println("SHouldStop = TRUE")
 
 	for k := LocalL.Front(); k != nil; k = k.Next() {
 
@@ -398,6 +407,7 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 				LocalL.Remove(k)
 				queue.UpdateBackup(LocalL)
 				isCab = true
+				fmt.Println("SHouldStop = TRUE")
 				return true
 			case dir == elevio.MD_Up:
 
@@ -411,7 +421,7 @@ func shouldStop(floorSensor int, dir elevio.MotorDirection, elevId int, transmit
 					queue.UpdateBackup(LocalL)
 
 					queue.RemoveRemoteOrder(tempButton)
-
+					fmt.Println("SHouldStop = TRUE")
 					return true
 				}
 			case dir == elevio.MD_Down:

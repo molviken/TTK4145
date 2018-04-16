@@ -16,7 +16,7 @@ type PeerUpdate struct {
 }
 
 const interval = 15 * time.Millisecond
-const timeout = 50 * time.Millisecond
+const timeout = 150 * time.Millisecond
 
 func Transmitter(port int, id string, transmitEnable <-chan bool) {
 
@@ -63,6 +63,7 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 		}
 
 		// Removing dead connection
+		if(len(p.Peers != 1)){
 		p.Lost = make([]string, 0)
 		for k, v := range lastSeen {
 			if time.Now().Sub(v) > timeout {
@@ -71,6 +72,7 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 				delete(lastSeen, k)
 			}
 		}
+	}
 
 		// Sending update
 		if updated {

@@ -85,7 +85,7 @@ func OpenDoor(timeOut chan<- bool, timerReset <-chan bool){
 
 
 func ObstructionTimeOut(obstr chan<- bool, obstrTimerReset <-chan bool, l *list.List ){
-	const obstrTime = 15* time.Second
+	const obstrTime = 5* time.Second
 	obstrTimer := time.NewTimer(0*time.Second)
 
 	for {
