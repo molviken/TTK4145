@@ -44,6 +44,7 @@ func EventHandlerInit(startFloor int, elevId int) {
 	}else{
 		elevator1.state = idle
 	}
+	elevFunc.SyncButtonLights(LocalL)
 
 }
 func HandleEvents(button chan elevio.ButtonEvent, floorSensor chan int, obstr chan bool, timeOut chan bool, timerReset chan bool,
